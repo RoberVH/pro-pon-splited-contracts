@@ -12,13 +12,19 @@ import "./proponShared.sol";
 //import "hardhat/console.sol";
 
 
+
 // Pro-pon Logic contract. Validates access and modify data on pro_ponData contract Data structures
 contract pro_ponLogic is proponShared {
 
 pro_ponData dataContract;       // pro_ponData.sol is the Contract that holds all Pro-pon data, constants, structs, vars
 address private owner;
 
-constructor(address _dataContractAddress) {
+// state vars to hold temporary values in functions
+mapping(address => bool) uniqueAddress; 
+address[]  emptyAddressArray = new address[](0);
+address[] uniqueWinners = new address[](0); 
+
+constructor(address _dataContractAddress) payable {
     dataContract = pro_ponData(_dataContractAddress);
      owner = payable(msg.sender);
 }
@@ -31,7 +37,7 @@ constructor(address _dataContractAddress) {
  // Modifiers ***************************************************************
     // only owner can do administrative task as withdrawing
     modifier onlyOwner() {
-        require(isOwner(), 'Only_owner_allowed');
+        require(msg.sender == owner, 'Only_owner_allowed');
         _;
     }
 
@@ -40,7 +46,6 @@ constructor(address _dataContractAddress) {
     // i.e. a company can't pretend to be another company
     modifier onlyCompanyAdmin(string memory companyId) {
         require(equals(dataContract.getCompanyId(msg.sender), companyId), 'Only_admin_can_perform');
-
         _;
     }
 
@@ -57,10 +62,11 @@ constructor(address _dataContractAddress) {
         _;
     }
 
-    function isOwner() public view returns (bool) {
-        return msg.sender == owner;
-    }
+    // function isOwner() public view returns (bool) {
+    //     return msg.sender == owner;
+    // }
 
+    // retire funds to owner account
     function withdraw() public onlyOwner {
         uint256 amount = address(this).balance;
         (bool success, ) = msg.sender.call{value: amount}("");
@@ -69,6 +75,10 @@ constructor(address _dataContractAddress) {
 
     // Getter/setters ***************************************************************
 
+ // Variables of capacity and price
+    function setOwner(address _newOwner) external onlyOwner {
+        owner=_newOwner;
+    }
 
  
     // utility functions ***************************************************************
@@ -82,7 +92,7 @@ constructor(address _dataContractAddress) {
 
     // concatStringAndAddress
     //          - Concatenate a string and an address, hash the concatenated result and create a mapping to a bool
-    function concatStringAndAddress(string memory _string, address _address) public pure returns (bytes32){
+    function concatStringAndAddress(string memory _string, address _address) private pure returns (bytes32){
         bytes32  stringhashed = keccak256(bytes(_string));
         bytes memory concatString = abi.encodePacked(stringhashed, _address);
         bytes32  hash = keccak256(concatString);
@@ -93,20 +103,20 @@ constructor(address _dataContractAddress) {
     //       check if the passed address is also present in array targetAddreses
     //       A 0 address is also checked as this is considered a 'deserted' item
     function winnerIsParticipating(address addresstoCheck, address[] memory targetAddresses ) private pure returns (bool) {
-        for (uint8 i=0; i<targetAddresses.length;i++)  
+        for (uint i=0; i<targetAddresses.length;i++)  
             if (addresstoCheck == targetAddresses[i] || addresstoCheck==address(0)) return true;  // account for deserted Items
         return false;
     }
 
-// check if and address (tocheck) is contained in an address array (container)
-    function isContainedAddress(address[] memory container, address tocheck) public pure returns (bool) {
-    for (uint8 i = 0; i < container.length; i++) {
-        if (container[i] == tocheck) {
-            return true;
-        }
-    }
-    return false;
-}
+// // check if and address (tocheck) is contained in an address array (container)
+//     function isContainedAddress(address[] memory container, address tocheck) public pure returns (bool) {
+//     for (uint i = 0; i < container.length; i++) {
+//         if (container[i] == tocheck) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }
 
 
     // Company functions ************************************************************
@@ -165,6 +175,9 @@ constructor(address _dataContractAddress) {
         require(bytes(chekString).length!=0,'address_not_admin'); // this address is not admin
         // Next sentence that was disable for developing and testing is 
         require(_openDate >= (block.timestamp - 3600),'opendate_behind_today'); // allow one hour behind!
+        // console.log('time:', block.timestamp);
+        // console.log('_openDate:', _openDate);
+
         require(_openDate < _endReceivingDate, 'initial_date_wrong');
         require(_endReceivingDate < _endDate, 'receiving_date_wrong');
         //uint currRFPIdx = getcurrentRFPIdx(); // global RFP Index
@@ -211,19 +224,16 @@ constructor(address _dataContractAddress) {
         onlyCompanyAdmin(companyId) 
         onlyIssuer(_rfpId)
         rfpCancelled(_rfpId) {
-        //contracto too long, disable this
-            //require(RFPs[_rfpId].endReceivingDate > block.timestamp,'end_receiving_reached');
-        //require(dataContract.RFPs[_rfpId].endReceivingDate > block.timestamp,'end_receiving_reached');
-        //require(RFPs[_rfpId].contestType==ContestType.INVITATION_ONLY,'wrong_contest_type');
         RFP memory rfp = dataContract.getRFP(_rfpId);
         require(rfp.contestType==ContestType.INVITATION_ONLY,'wrong_contest_type');
+        require(rfp.endReceivingDate > block.timestamp,'end_receiving_reached');
         require( (rfp.participants.length + invitedCompanies.length) <= dataContract.MAX_GUEST_INVITATION_TENDER(), 
                 'too_many_guests');
-        for (uint8 j=0; j < invitedCompanies.length; j++) {
+        for (uint j=0; j < invitedCompanies.length; j++) {
             bool  validAddress=true;
             if (msg.sender == invitedCompanies[j]) continue; // silently ignore if owner trying to invite itself bypassing it
             uint lenParticipants=rfp.participants.length;
-            for (uint8 i = 0; i < lenParticipants ; i++ ) 
+            for (uint i = 0; i < lenParticipants ; i++ ) 
               if ( rfp.participants[i]== invitedCompanies[j]) {
                  validAddress=false;            // if already invited silently ignore it bypassing it
                  break;
@@ -234,4 +244,149 @@ constructor(address _dataContractAddress) {
     }
 
 
+    // Register sender as participating in an Open RFP
+    // rejects and revert  if address already in list of registered participants
+    // reject if limit  MAX_GUEST_OPEN_TENDER  has already been reached
+    function registertoOpenRFP(uint _rfpId) public payable  rfpCancelled(_rfpId) {
+        RFP memory rfp = dataContract.getRFP(_rfpId);
+        require(msg.value>=dataContract.REGISTER_OPEN_RFP_PRICE(),'Insufficient_payment_fee');
+        //disable
+        require(rfp.contestType==ContestType.OPEN, 'not_open_tender');
+        //console.log('Blockchain datastamp:', block.timestamp);
+       require(rfp.endReceivingDate > block.timestamp,'end_receiving_reached');
+        require(msg.sender!= rfp.issuer,'can_not_register_self');
+        require(rfp.participants.length  < dataContract.MAX_GUEST_OPEN_TENDER(),'max_participants_reached');
+        uint numberofParticipants= rfp.participants.length;
+        for (uint i = 0; i < numberofParticipants; i++ ) {
+           require(rfp.participants[i] != msg.sender,'already_participating');
+        }
+        dataContract.addParticipantToRFP(_rfpId, msg.sender);
+    }
+
+  // New method Pro-pon v 0.2.0
+    // add several documents in one call all of them belonging to same RFPId and same DocType
+    function addDocuments(
+        uint _rfpIdx, 
+        uint[] memory _docTypes, 
+        string[] memory _names,
+        string[] memory _documentHashes, 
+        string[] memory _idxs) public  {
+        // check all arrays are same size
+        require(
+            _docTypes.length == _names.length &&
+            _names.length == _documentHashes.length &&
+            _documentHashes.length == _idxs.length,
+            "input_array_lengths_no_match"
+        );
+        RFP memory rfp = dataContract.getRFP(_rfpIdx);
+        //bool rfpOwner = msg.sender==RFPs[_rfpIdx].issuer;
+        bool rfpOwner = msg.sender==rfp.issuer;
+        // if not RFP owner, check the sender is in participants list
+        if (!rfpOwner) {
+            bool isIncluded = false;
+            uint numberofParticipants = rfp.participants.length;
+              for (uint j; j < numberofParticipants; j++) {
+                 if (msg.sender == rfp.participants[j]) {
+                    isIncluded = true;
+                    break;
+                }
+              }
+            require(isIncluded,'not_participant');
+        }
+        // Iterate over each document metadata sent
+        bool docOwnerAllowedTypes=false;
+        for (uint i=0; i<_names.length; i++ ) {
+          //  if sender is owner of RFP, check  current Doc has not invalid doctypes
+          // owner of RFP only can upload request, Q&A and contract tpe  docs, and else check
+          // for participant to not sent those Types
+            uint8 docType = uint8(_docTypes[i]);
+            docOwnerAllowedTypes = (docType == uint8(DocType.documentRequestType) || docType == uint8(DocType.documentQandAType) || 
+                                    docType == uint8(DocType.documentAmendment));
+            if (rfpOwner) require(docOwnerAllowedTypes, 'issuer_bad_doctype');
+                else  { 
+                    // a participant uplaoding docs, is allowed?
+                    require(!docOwnerAllowedTypes,'participant_bad_doctype');
+                    // is on time?
+                    require(rfp.endReceivingDate > block.timestamp,'end_receiving_reached');
+                    }
+            // so far so good, push it to contract state
+            dataContract.addDocument(
+                        _rfpIdx,
+                        _docTypes[i],
+                        _names[i],
+                        msg.sender,
+                        _documentHashes[i],
+                        _idxs[i]
+                    );            
+        }
+    }
+
+  // declareWinners
+    //  Register all account addresess of winners for Items of an RFP or for the whole RFP if no Items (at index 0 of winners array)
+    //  _rfpIndex - Global Id of RFP
+    //  _companyId  - Id of RFP Issuing company
+    //  winners  - array with winners addresses. If addres 0x is declared deserted
+    function declareWinners(uint _rfpIndex, string memory _companyId, address[] memory winners) public  
+    onlyCompanyAdmin(_companyId)
+    onlyIssuer(_rfpIndex)
+    rfpCancelled(_rfpIndex)
+    {
+        // first check conditions are met
+        RFP memory rfp = dataContract.getRFP(_rfpIndex);
+        require(rfp.winners.length == 0, 'rfp_already_awarded'); // Awarding only once is allowed
+        require(!rfp.canceled, 'already_canceled');        
+        //require(RFPs[_rfpIndex].winners.length==0,'rfp_already_awarded'); // awarding only once is allowed
+        //require(!RFPs[_rfpIndex].canceled, 'already_canceled');
+        uint itemsLength=rfp.items.length;
+        uint256 winnersLength = winners.length;
+        //uint itemsLength=RFPs[_rfpIndex].items.length;
+        require(
+                (itemsLength == 0 || itemsLength == 1) && winners.length == 1 ||
+                itemsLength >= 2 && winnersLength == itemsLength,
+                "not_matching_winners"
+            );                    
+        require(block.timestamp >= rfp.endDate, 'enddate_not_reached_yet');
+        //address[] memory uniqueWinners=new address[](0);
+        for (uint i=0; i < winnersLength; i++) {
+            address winner=winners[i];
+            require(winner!=msg.sender,'cannot_self_award');
+            require(winnerIsParticipating(winner, rfp.participants),'invalid_winner');
+            if (!uniqueAddress[winner] ) {
+                uniqueAddress[winner]=true;
+                if(winner!=address(0)) {
+                    uniqueWinners.push(winner);
+                }
+            }
+        }
+        
+        dataContract.addWinnersToRFP(_rfpIndex, winners);
+        dataContract.acrueWinsToCompany(_rfpIndex, uniqueWinners);
+        
+        // reset mapping and array for next use
+        uniqueWinners = emptyAddressArray;
+        for (uint i=0; i < winnersLength; i++) {
+            uniqueAddress[winners[i]] = false;
+        }
+    } 
+
+function cancelRFP(string memory _companyId, uint _rfpIndex ) public 
+        onlyCompanyAdmin(_companyId)
+        onlyIssuer(_rfpIndex) 
+        rfpCancelled(_rfpIndex) {
+        RFP memory rfp = dataContract.getRFP(_rfpIndex);
+        require(rfp.winners.length==0,'rfp_already_awarded'); // can't cancel if already awarded
+        dataContract.setRFPCanceled(_rfpIndex, true);
+        dataContract.setRFPCancelDate(_rfpIndex, block.timestamp);
+        // RFPs[_rfpIndex].canceled = true;
+        // RFPs[_rfpIndex].cancelDate = block.timestamp;
+    }   
+
+
+    function destroy() public onlyOwner() {
+        selfdestruct(payable(owner));       // always send funds to owner as in withdraw function, not manager  
+    }
+
 }
+
+
+

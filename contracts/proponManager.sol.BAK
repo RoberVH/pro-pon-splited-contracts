@@ -1,0 +1,71 @@
+//SPDX-License-Identifier: MIT
+/**
+ * pro-ponManager   -
+ *               Solidity Contract for setting values, withdrawing and destroyig propon contracts (Data and Logic)
+ *               May/2023
+ *               Author: Roberto Vicuña
+ */
+pragma solidity ^0.8.9;
+
+import "./proponData.sol";
+import "./proponShared.sol";
+//import "hardhat/console.sol";
+
+// Pro-pon Data contract. Keeps track of companies and RFP contests
+contract pro_ponManager {
+    pro_ponData dataContract;       // pro_ponData.sol is the Contract that holds all Pro-pon data, constants, structs, vars
+    address private owner;
+
+
+    constructor(address _dataContractAddress) payable {
+    dataContract = pro_ponData(_dataContractAddress);
+     owner = msg.sender;
+    }
+
+ // Modifiers ***************************************************************
+    // only owner can do administrative task as withdrawing
+    modifier onlyOwner() {
+        require(msg.sender == owner, 'Only_owner_allowed');
+        _;
+    }
+
+  function setOwner(address _newOwner) external onlyOwner {
+        owner= _newOwner;
+    }
+
+    function setDataContract(address _dataContract) external onlyOwner {
+        dataContract = pro_ponData(_dataContract);
+    }
+
+  function setCreateCompanyPrice(uint256 _value) external onlyOwner {
+        dataContract.setCREATE_COMPANY_PRICE(_value);
+    }
+
+    function setCreateOpenRfpPrice(uint256 _value) external onlyOwner {
+        dataContract.setCREATE_OPEN_RFP_PRICE(_value);
+    }
+
+    function setCreateInvitationRfpPrice(uint256 _value) external onlyOwner {
+        dataContract.setCREATE_INVITATION_RFP_PRICE(_value);
+    }
+
+    function setRegisterOpenRfpPrice(uint256 _value) external onlyOwner {
+        dataContract.setREGISTER_OPEN_RFP_PRICE(_value);
+    }
+
+    function setMaxGuestOpenTender(uint _value) external onlyOwner {
+        dataContract.setMAX_GUEST_OPEN_TENDER(_value);
+    }
+
+    function setMaxGuestInvitationTender(uint _value) external onlyOwner {
+        dataContract.setMAX_GUEST_INVITATION_TENDER(_value);
+    }
+
+    function destroyData() public onlyOwner() {
+            dataContract.destroy();        
+    }
+
+    function destroy() public onlyOwner() {
+            selfdestruct(payable(owner));        
+    }
+}

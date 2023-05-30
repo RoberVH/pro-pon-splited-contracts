@@ -1,4 +1,4 @@
-
+7
 /**
  * FOR THIS SCRIPT TO RUN FOLLOWINNG CONSTANTS IN CONTRACT MUST BE SET TO 
 *   MAX_GUEST_OPEN_TENDER = 5
@@ -6,7 +6,7 @@
 */
 
 const { expect } = require("chai")
-//const { describe, it } = require("mocha")
+//const { describe, xit } = require("mocha")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 
@@ -59,6 +59,8 @@ const test_pro_pon3 = {
     return unixdate=Math.floor(new Date(date).getTime()/1000)
   }
 
+  // Returns today minus daysAgo 
+  // for future dates call with negative param
   function convertDatesAgo(daysAgo) {
     let today= new Date()
     let convertedDay= new Date(today)
@@ -84,7 +86,7 @@ const test_pro_pon3 = {
   // const  invitationContest = ContestType.INVITATION_ONLY 
 
   // Id RFP is the RFP name field at pro-pon contract
-  let IDRFP=[
+  let IDofRFPArray=[
     'LPN3094-3912-4',
     'REGISTRO NACIONAL DE PROVEEDURIA. CONCURSO L3403-SAD. DEPTO. DE COMERCIO E INDUSTRA',
     'CON CARACTERES UTF-8 ñÑ!¿ TF Éé, Èè, Êê, Ëë. Œœ 传/傳 Îî, ÏïÔôÙ ù pê, Û û, Ü ü Ÿ ÿ 漢字 汉字 Ğ	ğ Ð Ý Þ ð ý þ ',
@@ -107,7 +109,7 @@ const test_pro_pon3 = {
       'http://morels.wwe.mx/MP_typ_T?_encoding=UTF8&from=gp&itemId=&orderId=114-9127329-3803961&packageIndex=0WhcdKKkXl8gJXdmrwtWasdKCRZQlWCSJtVBChHGAs564mnSRqFFGCQXLmKfCgqLbQFdHSjtyt',
       'https://www.apratmse.com/-/es/b?node=16225005011&pf_rd_r=N62KCHHDBD52V0HCXRFD&pf_rd_p=27f4d66c-efe3-4ee0-a6bf-6cfd06f31a84&pd_rd_r=ba0a45fc-ef91-423f-aacb-2fab6ef4bf5d&pd_rd_w=jkE5h&pd_rd_wg=9VC7C&ref_=pd_gw_unk',
       '',
-      'http://lnc.it/-/Toallitas-paquetes-fragancia/dp/B07H53W5WP/ref=lp_16225005011_1_3'
+      'http://lnc.xit/-/Toallitas-paquetes-fragancia/dp/B07H53W5WP/ref=lp_16225005011_1_3'
     ]
 
 // let openDate=convertDate('2022/07/24')
@@ -174,11 +176,11 @@ const listItems3 = [
 
 const createRFP = async (proponContract, address, RFPNameIdx, ContestType, ItemsList, value) => {
   let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
-  let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
-  let endDate=convertDatesAgo(0) -(2 * 60)  // Now
+  let endReceiving=convertDatesAgo(-1) // one day from now
+  let endDate=convertDatesAgo(-2)  // two day from now
 
   await proponContract.connect(address).createRFP(
-    IDRFP[RFPNameIdx],
+    IDofRFPArray[RFPNameIdx],
     nameRfp[RFPNameIdx],
     rfpWebLink[RFPNameIdx],
     openDate,
@@ -195,25 +197,40 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
   async function deployProponandCreateCompanies() {
     // Get the ContractFactory and Signers here.
     const [owner, addr1, addr2, addr3, addr4, addr5,addr6] = await ethers.getSigners();
-    const propon = await ethers.getContractFactory("pro_pon");
-    const proponContract = await propon.deploy();
+    // const propon = await ethers.getContractFactory("pro_pon");
+    // const proponContract = await propon.deploy();
+
+    const proponData = await ethers.getContractFactory("pro_ponData");
+    const proponDataContract = await proponData.deploy();
+    // console.log('proponDataContract',proponDataContract.address)
+    // console.log('owner of proponDataContract', await proponDataContract.getOwner());
+
+    const proponLogic = await ethers.getContractFactory("pro_ponLogic");
+    const proponLogicContract = await proponLogic.deploy(proponDataContract.address);
+
+    // console.log('proponLogicContract', proponLogicContract.address)
+    // console.log('Setting Datacontract owner')
+    await proponDataContract.setOwner(proponLogicContract.address)
+
+
+
     
     //company 1 from owner account
-    let txn = await proponContract.createCompany(
+    let txn = await proponLogicContract.createCompany(
       test_pro_pon1.id,
       test_pro_pon1.name,
       test_pro_pon1.country,
       {value: ethers.utils.parseEther('0.0001')}
       )
       // company 2 from addr1 account
-    txn = await proponContract.connect(addr1).createCompany(
+    txn = await proponLogicContract.connect(addr1).createCompany(
         test_pro_pon2.id,
         test_pro_pon2.name,
         test_pro_pon2.country,
         {value: ethers.utils.parseEther('0.0001')}
         )      
     // company 3 from addr2 account
-    txn = await proponContract.connect(addr2).createCompany(
+    txn = await proponLogicContract.connect(addr2).createCompany(
         test_pro_pon3.id,
         test_pro_pon3.name,
         test_pro_pon3.country,
@@ -221,7 +238,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         ) 
 
     // company 4 from addr3
-    txn = await proponContract.connect(addr3).createCompany(
+    txn = await proponLogicContract.connect(addr3).createCompany(
       test_pro_pon4.id,
       test_pro_pon4.name,
       test_pro_pon4.country,
@@ -229,7 +246,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       ) 
     
     // company 5 from addr4
-    txn = await proponContract.connect(addr4).createCompany(
+    txn = await proponLogicContract.connect(addr4).createCompany(
       test_pro_pon5.id,
       test_pro_pon5.name,
       test_pro_pon5.country,
@@ -237,7 +254,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       ) 
 
       // company 6 from addr5
-      txn = await proponContract.connect(addr5).createCompany(
+      txn = await proponLogicContract.connect(addr5).createCompany(
       test_pro_pon6.id,
       test_pro_pon6.name,
       test_pro_pon6.country,
@@ -245,26 +262,28 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       ) 
 
       // company 7 from addr6
-      txn = await proponContract.connect(addr6).createCompany(
+      txn = await proponLogicContract.connect(addr6).createCompany(
         test_pro_pon7.id,
         test_pro_pon7.name,
         test_pro_pon7.country,
         {value: ethers.utils.parseEther('0.0001')}
         ) 
 
-    return { proponContract, owner, addr1, addr2, addr3, addr4, addr5,addr6 };
+    // return { proponContract, owner, addr1, addr2, addr3, addr4, addr5,addr6 };
+    // Fixtures can return anything you consider useful for your tests
+    return { proponDataContract, proponLogicContract, owner, addr1, addr2, addr3, addr4, addr5, addr6 };
   }  
     
   
   describe(`**********************  RFPs3.js **********************\nCreate Open RFPs for 1 company with rigth price with owner account`, function () {
   it("1 Should create an OPEN Contest  RFP", async function () {
-    const {  proponContract,  owner } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract, proponLogicContract,  owner } = await loadFixture(deployProponandCreateCompanies);
     // create Open RFP
     let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
     let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
     let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-    await proponContract.connect(owner).createRFP(
-      IDRFP[3],        // name
+    await proponLogicContract.connect(owner).createRFP(
+      IDofRFPArray[3],        // name
       nameRfp[3],   // description
       rfpWebLink[3], // RFP's web site link
       openDate,
@@ -274,23 +293,20 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       listItems1,
       {value: ethers.utils.parseEther('0.0001')}
     )
-    let company= await proponContract.getCompany(owner.address)
-    //console.log('company', company)
+    let company= await proponDataContract.getCompany(owner.address)
     let RFPidx = await company.company_RFPs[0].toNumber()  // retrieve first RFP of this company
-    //console.log('RFPidx:', RFPidx)
-    let RFP = await proponContract.getRFPbyIndex(RFPidx)
-    //console.log('RFP:', RFP)
-    expect(RFP.name).to.equal(IDRFP[3]);
+    let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
+    expect(RFP.name).to.equal(IDofRFPArray[3]);
   });
   
   it("2 Should create an INVITATION Contest  RFP with rigth price  for addr1 account", async function () {
-      const {  proponContract, addr1 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract, proponLogicContract, addr1 } = await loadFixture(deployProponandCreateCompanies);
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
       // create Invitation RFP
-      await proponContract.connect(addr1).createRFP(
-        IDRFP[2],        // name
+      await proponLogicContract.connect(addr1).createRFP(
+        IDofRFPArray[2],        // name
         nameRfp[2],   // description
         rfpWebLink[2], // RFP's web site link
         openDate,
@@ -300,19 +316,19 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems1,
         {value: ethers.utils.parseEther('0.0002')}
       )
-      let company= await proponContract.getCompany(addr1.address)
+      let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = await company.company_RFPs[0].toNumber()  // retrieve first RFP of this company
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
-      expect(RFP.name).to.equal(IDRFP[2]);
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
+      expect(RFP.name).to.equal(IDofRFPArray[2]);
     });
       
     it("3 Should fail with Insufficient_payment msg when creating creating OPEN RFP with underpriced Tx", async function () {
-      const {  proponContract, addr2 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract, proponLogicContract, addr2 } = await loadFixture(deployProponandCreateCompanies);
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await expect (proponContract.connect(addr2).createRFP(
-        IDRFP[3],        // name
+      await expect (proponLogicContract.connect(addr2).createRFP(
+        IDofRFPArray[3],        // name
         nameRfp[3],   // description
         rfpWebLink[3], // RFP's web site link
         openDate,
@@ -325,12 +341,12 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });
 
     it("4 Should fail with Insufficient_payment msg when creating INVITATION RFP with underpriced Tx", async function () {
-      const {  proponContract,  addr3 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   addr3 } = await loadFixture(deployProponandCreateCompanies);
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await expect (proponContract.connect(addr3).createRFP(
-        IDRFP[1],        // name
+      await expect (proponLogicContract.connect(addr3).createRFP(
+        IDofRFPArray[1],        // name
         nameRfp[1],   // description
         rfpWebLink[1], // RFP's web site link
         openDate,
@@ -343,12 +359,12 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });
     
     it("5 Should retrieve addr1 company second (INVITATION) RFP from its own  record array", async function () {
-      const {  proponContract, addr1 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,  addr1 } = await loadFixture(deployProponandCreateCompanies);
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await proponContract.connect(addr1).createRFP(
-        IDRFP[4],        // name
+      await proponLogicContract.connect(addr1).createRFP(
+        IDofRFPArray[4],        // name
         nameRfp[4],   // description
         rfpWebLink[4], // RFP's web site link
         openDate,
@@ -358,8 +374,8 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems3,
         {value: ethers.utils.parseEther('0.0001')}
       ) 
-      await proponContract.connect(addr1).createRFP(
-        IDRFP[3],        // name
+      await proponLogicContract.connect(addr1).createRFP(
+        IDofRFPArray[3],        // name
         nameRfp[3],   // description
         rfpWebLink[3], // RFP's web site link
         openDate,
@@ -369,34 +385,34 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems2,
         {value: ethers.utils.parseEther('0.0002')}
       ) 
-      let company= await proponContract.getCompany(addr1.address)
+      let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = company.company_RFPs[1]  // retrieve second RFP of this company
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
-      expect(RFP.name).to.equal(IDRFP[3]);
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
+      expect(RFP.name).to.equal(IDofRFPArray[3]);
       expect(RFP.items.length).to.equal(listItems2.length);
       expect(RFP.items[5]).to.equal(listItems2[5]);
       expect(RFP.contestType).to.equal(ContestType.INVITATION);
     });
 
-    it("6 Should reject creating an Invitation RFP with the same RFP ID it had created before", async function () {
-      const {  proponContract, addr1 } = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, addr1, 4, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 0, ContestType.OPEN, items, '0.0002')
-      await createRFP(proponContract, addr1, 1, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 2, ContestType.OPEN, items, '0.0002')
-      await createRFP(proponContract, addr1, 3, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 5, ContestType.OPEN, items, '0.0002')
+    it("6 Should reject creating an Invitation RFP with the same RFP ID xit had created before", async function () {
+      const { proponDataContract,  proponLogicContract,  addr1 } = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, addr1, 4, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 0, ContestType.OPEN, items, '0.0002')
+      await createRFP(proponLogicContract, addr1, 1, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 2, ContestType.OPEN, items, '0.0002')
+      await createRFP(proponLogicContract, addr1, 3, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 5, ContestType.OPEN, items, '0.0002')
       // check last RFP created alright
-      let company= await proponContract.getCompany(addr1.address)
+      let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = company.company_RFPs[5]  // retrieve sixth RFP of this company
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
-      expect(RFP.name).to.equal(IDRFP[5]);
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
+      expect(RFP.name).to.equal(IDofRFPArray[5]);
       // try to create 6th RFP reusing ID number 5
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await expect( proponContract.connect(addr1).createRFP(
-        IDRFP[0],        // name
+      await expect( proponLogicContract.connect(addr1).createRFP(
+        IDofRFPArray[0],        // name
         nameRfp[0],   // description
         rfpWebLink[0], // RFP's web site link
         openDate,
@@ -408,25 +424,25 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       )).to.be.revertedWith('rfpid_already_taken')
     });   
     
-    it("7 Should reject creating an Open RFP with the same RFP ID it had created before", async function () {
-      const {  proponContract, addr1 } = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, addr1, 4, ContestType.INVITATION, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 0, ContestType.INVITATION, items, '0.0002')
-      await createRFP(proponContract, addr1, 1, ContestType.INVITATION, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 2, ContestType.INVITATION, items, '0.0002')
-      await createRFP(proponContract, addr1, 3, ContestType.INVITATION, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 5, ContestType.INVITATION, items, '0.0002')
+    it("7 Should reject creating an Open RFP with the same RFP ID xit had created before", async function () {
+      const { proponDataContract,  proponLogicContract,  addr1 } = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, addr1, 4, ContestType.INVITATION, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 0, ContestType.INVITATION, items, '0.0002')
+      await createRFP(proponLogicContract, addr1, 1, ContestType.INVITATION, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 2, ContestType.INVITATION, items, '0.0002')
+      await createRFP(proponLogicContract, addr1, 3, ContestType.INVITATION, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 5, ContestType.INVITATION, items, '0.0002')
       // check last RFP created alright
-      let company= await proponContract.getCompany(addr1.address)
+      let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = company.company_RFPs[5]  // retrieve sixth RFP of this company
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
-      expect(RFP.name).to.equal(IDRFP[5]);
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
+      expect(RFP.name).to.equal(IDofRFPArray[5]);
       // try to create 6th RFP reusing ID number 5
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await expect( proponContract.connect(addr1).createRFP(
-        IDRFP[5],        // name
+      await expect( proponLogicContract.connect(addr1).createRFP(
+        IDofRFPArray[5],        // name
         nameRfp[5],   // description
         rfpWebLink[5], // RFP's web site link
         openDate,
@@ -438,25 +454,25 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       )).to.be.revertedWith('rfpid_already_taken')
     });     
 
-    it("8 Should reject creating an Invitation RFP with the same RFP ID it had created before on OPEN RFP", async function () {
-      const {  proponContract, addr1 } = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, addr1, 4, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 0, ContestType.OPEN, items, '0.0002')
-      await createRFP(proponContract, addr1, 1, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 2, ContestType.OPEN, items, '0.0002')
-      await createRFP(proponContract, addr1, 3, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 5, ContestType.OPEN, items, '0.0002')
+    it("8 Should reject creating an Invitation RFP with the same RFP ID xit had created before on OPEN RFP", async function () {
+      const { proponDataContract,  proponLogicContract,  addr1 } = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, addr1, 4, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 0, ContestType.OPEN, items, '0.0002')
+      await createRFP(proponLogicContract, addr1, 1, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 2, ContestType.OPEN, items, '0.0002')
+      await createRFP(proponLogicContract, addr1, 3, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 5, ContestType.OPEN, items, '0.0002')
       // check last RFP created alright
-      let company= await proponContract.getCompany(addr1.address)
+      let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = company.company_RFPs[5]  // retrieve sixth RFP of this company
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
-      expect(RFP.name).to.equal(IDRFP[5]);
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
+      expect(RFP.name).to.equal(IDofRFPArray[5]);
       // try to create 6th RFP reusing ID number 5
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await expect( proponContract.connect(addr1).createRFP(
-        IDRFP[4],        // name
+      await expect( proponLogicContract.connect(addr1).createRFP(
+        IDofRFPArray[4],        // name
         nameRfp[4],   // description
         rfpWebLink[4], // RFP's web site link
         openDate,
@@ -469,54 +485,54 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });   
 
     it("9 Should assign correct global Index to RFP", async function () {
-      const {  proponContract, owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
-      await createRFP(proponContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
-      await createRFP(proponContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
-      await createRFP(proponContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th
-      await createRFP(proponContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
-      await createRFP(proponContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
-      await createRFP(proponContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
+      const { proponDataContract,  proponLogicContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
+      await createRFP(proponLogicContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
+      await createRFP(proponLogicContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
+      await createRFP(proponLogicContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th
+      await createRFP(proponLogicContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
+      await createRFP(proponLogicContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
+      await createRFP(proponLogicContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
       // check 3rd RFP created alright (index 2)
-      let RFP = await proponContract.getRFPbyIndex(2)
-      expect(RFP.name).to.equal(IDRFP[1]);    // it was assgined at 3rd RFP
-      expect(RFP.rfpIndex).to.equal(2);    // it was assigned at 3rd RFP
+      let RFP = await proponDataContract.getRFPbyIndex(2)
+      expect(RFP.name).to.equal(IDofRFPArray[1]);    // xit was assgined at 3rd RFP
+      expect(RFP.rfpIndex).to.equal(2);    // xit was assigned at 3rd RFP
       // check 7th RFP created alright (index 6)
-      RFP = await proponContract.getRFPbyIndex(6)   // 7th RFP
+      RFP = await proponDataContract.getRFPbyIndex(6)   // 7th RFP
       expect(RFP.rfpIndex.toNumber()).to.equal(6);    // 
     });   
 
     it("10 Should record correctly weblink in RFP", async function () {
-      const {  proponContract, owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
-      await createRFP(proponContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
-      await createRFP(proponContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
-      await createRFP(proponContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th
-      await createRFP(proponContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
-      await createRFP(proponContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
-      await createRFP(proponContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
+      const { proponDataContract,  proponLogicContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
+      await createRFP(proponLogicContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
+      await createRFP(proponLogicContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
+      await createRFP(proponLogicContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th
+      await createRFP(proponLogicContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
+      await createRFP(proponLogicContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
+      await createRFP(proponLogicContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
       // check 3rd RFP created alright (index 2)
-      let RFP = await proponContract.getRFPbyIndex(2)
-      expect(RFP.rfpwebsite).to.equal(rfpWebLink[1]);    // it was assgined at 3rd RFP
+      let RFP = await proponDataContract.getRFPbyIndex(2)
+      expect(RFP.rfpwebsite).to.equal(rfpWebLink[1]);    // xit was assgined at 3rd RFP
       
     });   
 
     it("11 Should allow use a previously used RFP Id but from a different Issuer account", async function () {
-      const {  proponContract, owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
-      await createRFP(proponContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
-      await createRFP(proponContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
-      await createRFP(proponContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th
-      await createRFP(proponContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
-      await createRFP(proponContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
-      await createRFP(proponContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
+      const { proponDataContract,  proponLogicContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
+      await createRFP(proponLogicContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
+      await createRFP(proponLogicContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
+      await createRFP(proponLogicContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th
+      await createRFP(proponLogicContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
+      await createRFP(proponLogicContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
+      await createRFP(proponLogicContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
       // check 3rd RFP created alright (index 2)
-      // IDRFP[1] Has been used byt company addr2, now reuse it for addr4, it should allow it
+      // IDofRFPArray[1] Has been used byt company addr2, now reuse xit for addr4, xit should allow xit
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await  proponContract.connect(addr4).createRFP(
-        IDRFP[1],        // name
+      await  proponLogicContract.connect(addr4).createRFP(
+        IDofRFPArray[1],        // name
         nameRfp[1],   // description
         rfpWebLink[1], // RFP's web site link
         openDate,
@@ -526,26 +542,26 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems2,
         {value: ethers.utils.parseEther('0.0002')}
       )
-      let RFP = await proponContract.getRFPbyIndex(7) // retrieve las one
-      expect(RFP.name).to.equal(IDRFP[1]);    // it was assgined at 3rd RFP
+      let RFP = await proponDataContract.getRFPbyIndex(7) // retrieve las one
+      expect(RFP.name).to.equal(IDofRFPArray[1]);    // xit was assgined at 3rd RFP
     });  
 
     it("12 Should reject use a previously used RFP with UTF-8 chars", async function () {
-      const {  proponContract, owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
-      await createRFP(proponContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
-      await createRFP(proponContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
-      await createRFP(proponContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th with UTF chars
-      await createRFP(proponContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
-      await createRFP(proponContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
-      await createRFP(proponContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
+      const { proponDataContract,  proponLogicContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
+      await createRFP(proponLogicContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
+      await createRFP(proponLogicContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
+      await createRFP(proponLogicContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th with UTF chars
+      await createRFP(proponLogicContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
+      await createRFP(proponLogicContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
+      await createRFP(proponLogicContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
       // check 3rd RFP created alright (index 2)
-      // IDRFP[2] with UTF-8 chars reused by same addr3
+      // IDofRFPArray[2] with UTF-8 chars reused by same addr3
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await expect (proponContract.connect(addr3).createRFP(
-        IDRFP[2],        // name
+      await expect (proponLogicContract.connect(addr3).createRFP(
+        IDofRFPArray[2],        // name
         nameRfp[2],   // description
         rfpWebLink[2], // RFP's web site link
         openDate,
@@ -555,25 +571,25 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems2,
         {value: ethers.utils.parseEther('0.0002')}
       )).to.be.revertedWith('rfpid_already_taken')
-      let RFP = await proponContract.getRFPbyIndex(3) // retrieve las one
+      let RFP = await proponDataContract.getRFPbyIndex(3) // retrieve las one
     }); 
 
-    it("13 Should accept when there are trailing leading spaces with UTF-8 chars making it different", async function () {
-      const {  proponContract, owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
-      await createRFP(proponContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
-      await createRFP(proponContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
-      await createRFP(proponContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th with UTF chars
-      await createRFP(proponContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
-      await createRFP(proponContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
-      await createRFP(proponContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
+    it("13 Should accept when there are trailing leading spaces with UTF-8 chars making xit different", async function () {
+      const { proponDataContract,  proponLogicContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
+      await createRFP(proponLogicContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
+      await createRFP(proponLogicContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
+      await createRFP(proponLogicContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th with UTF chars
+      await createRFP(proponLogicContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
+      await createRFP(proponLogicContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
+      await createRFP(proponLogicContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
       // check 3rd RFP created alright (index 2)
-      // IDRFP[2] with trailing spaces with UTF-8 chars used by same addr3
+      // IDofRFPArray[2] with trailing spaces with UTF-8 chars used by same addr3
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await proponContract.connect(addr3).createRFP(
-        '  ' + IDRFP[2] + ' ',        // name
+      await proponLogicContract.connect(addr3).createRFP(
+        '  ' + IDofRFPArray[2] + ' ',        // name
         nameRfp[2],   // description
         rfpWebLink[2], // RFP's web site link
         openDate,
@@ -583,25 +599,25 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems2,
         {value: ethers.utils.parseEther('0.0002')}
       )
-      let RFP = await proponContract.getRFPbyIndex(3) // retrieve las one
+      let RFP = await proponDataContract.getRFPbyIndex(3) // retrieve las one
     });     
 
-    it("14 Should reject  when there are trailing leading spaces with UTF-8 chars when it's the same", async function () {
-      const {  proponContract, owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
-      await createRFP(proponContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
-      await createRFP(proponContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
-      await createRFP(proponContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th with UTF chars
-      await createRFP(proponContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
-      await createRFP(proponContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
-      await createRFP(proponContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
+    it("14 Should reject reusing RFP ID event when there are trailing leading spaces with UTF-8 chars", async function () {
+      const { proponDataContract,  proponLogicContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 4, ContestType.OPEN, listItems3, '0.0002')  //1rst
+      await createRFP(proponLogicContract, addr1, 0, ContestType.INVITATION, items, '0.0002')  //2nd
+      await createRFP(proponLogicContract, addr2, 1, ContestType.OPEN, listItems3, '0.0002')   // 3rd
+      await createRFP(proponLogicContract, addr3, 2, ContestType.OPEN, listItems2, '0.0002')   // 4th with UTF chars
+      await createRFP(proponLogicContract, addr4, 3, ContestType.INVITATION, listItems3, '0.0002') // 5th
+      await createRFP(proponLogicContract, addr5, 5, ContestType.INVITATION, items, '0.0002')     // 6th
+      await createRFP(proponLogicContract, addr6, 3, ContestType.OPEN, listItems2, '0.0002')     // 7th
       // check 3rd RFP created alright (index 2)
-      // IDRFP[2] with trailing spaces with UTF-8 chars used by same addr3
+      // IDofRFPArray[2] with trailing spaces with UTF-8 chars used by same addr3
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await proponContract.connect(addr3).createRFP(
-        '  ' + IDRFP[2] + ' ',        // name
+      await proponLogicContract.connect(addr3).createRFP(
+        '  ' + IDofRFPArray[2] + ' ',        // name
         nameRfp[2],   // description
         rfpWebLink[2], // RFP's web site link
         openDate,
@@ -611,9 +627,9 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems2,
         {value: ethers.utils.parseEther('0.0002')}
       )
-      // now reuse it with trailing leading spaces
-      await expect (proponContract.connect(addr3).createRFP(
-        IDRFP[2],        // name
+      // now reuse xit with trailing leading spaces
+      await expect (proponLogicContract.connect(addr3).createRFP(
+        IDofRFPArray[2],        // name
         nameRfp[2],   // description
         rfpWebLink[2], // RFP's web site link
         openDate,
@@ -628,13 +644,13 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
 
   describe("Record participant invitation companies to RFP ", function () {
     it("1 Should record invitation to owner company to second contest (invitation contest) of addr2 company", async function () {
-      const {  proponContract,  owner, addr2 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr2 } = await loadFixture(deployProponandCreateCompanies);
       // create 2 Open & Invitation RFPs  for company addr2
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
-      let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
-      let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await proponContract.connect(addr2).createRFP(
-        IDRFP[1],        // name
+      let endReceiving=convertDatesAgo(-1) // 1 day from now
+      let endDate=convertDatesAgo(-2)   // 2 day from now
+      await proponLogicContract.connect(addr2).createRFP(
+        IDofRFPArray[1],        // name
         nameRfp[1],   // description
         rfpWebLink[1], // RFP's web site link
         openDate,
@@ -644,8 +660,8 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems3,
         {value: ethers.utils.parseEther('0.0001')}
       ) 
-      await proponContract.connect(addr2).createRFP(
-        IDRFP[2],        // name
+      await proponLogicContract.connect(addr2).createRFP(
+        IDofRFPArray[2],        // name
         nameRfp[2],   // description
         rfpWebLink[2], // RFP's web site link
         openDate,
@@ -656,94 +672,94 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         {value: ethers.utils.parseEther('0.0002')}
       )       
       // get addr2 company record
-      let company= await proponContract.getCompany(addr2.address)
+      let company= await proponDataContract.getCompany(addr2.address)
       // retrieve second RFP of addr2 company
       let RFPidx = await company.company_RFPs[1]  // second contest is invitation type
-      //let rfp= await proponContract.getRFPbyIndex(RFPidx)
+      //let rfp= await proponDataContract.getRFPbyIndex(RFPidx)
       // let addr2 invite owner to second RFP (Invitation)
-      await proponContract.connect(addr2).inviteCompaniestoRFP(
+      await proponLogicContract.connect(addr2).inviteCompaniestoRFP(
         RFPidx,
         test_pro_pon3.id, // ID of owner account
         [owner.address]     // owner account
        )  
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
       expect(RFP.participants[0]).to.equal(owner.address);
     });
 
     it("2 Should ignore addr1 company invitation to self", async function () {
-      const {  proponContract, addr1 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,  addr1 } = await loadFixture(deployProponandCreateCompanies);
       // get first company record
       // create RFPs
-      await createRFP(proponContract, addr1, 3, ContestType.INVITATION, listItems3, '0.0002')
-      await createRFP(proponContract, addr1, 4, ContestType.INVITATION, items, '0.0002')
+      await createRFP(proponLogicContract, addr1, 3, ContestType.INVITATION, listItems3, '0.0002')
+      await createRFP(proponLogicContract, addr1, 4, ContestType.INVITATION, items, '0.0002')
       // retrieve second RFP of this company
-      let company= await proponContract.getCompany(addr1.address)
+      let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = await company.company_RFPs[1]  
-      expect(proponContract.connect(addr1).inviteCompaniestoRFP(
+      expect(proponLogicContract.connect(addr1).inviteCompaniestoRFP(
             RFPidx.toNumber(),
             test_pro_pon2.id,
             [addr1.address]))
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
       expect(RFP.participants.length).to.equal(0)
     });    
 
     it("3 Should invitate two companies to Invitation second RFP of owner company", async function () {
-      const {  proponContract, owner, addr1, addr2 } = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 3, ContestType.INVITATION, listItems3, '0.0002')
-      await createRFP(proponContract, owner, 0, ContestType.INVITATION, items, '0.0002')
+      const { proponDataContract,  proponLogicContract,  owner, addr1, addr2 } = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 3, ContestType.INVITATION, listItems3, '0.0002')
+      await createRFP(proponLogicContract, owner, 0, ContestType.INVITATION, items, '0.0002')
       // retrieve second RFP of this company
-      let company= await proponContract.getCompany(owner.address)      // retrieve second RFP of this company
+      let company= await proponDataContract.getCompany(owner.address)      // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  
-      await proponContract.inviteCompaniestoRFP(  // invite first company (addr1)
+      await proponLogicContract.inviteCompaniestoRFP(  // invite first company (addr1)
       RFPidx,
       test_pro_pon1.id,
       [addr1.address] )
-      await proponContract.inviteCompaniestoRFP(  // invite second company (addr2)
+      await proponLogicContract.inviteCompaniestoRFP(  // invite second company (addr2)
       RFPidx,
       test_pro_pon1.id,
       [addr2.address] )
       // get company record
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
       //check participants first (addr2) and second (addr1) participants to RFP 
       expect(RFP.participants[0]).to.equal(addr1.address);
       expect(RFP.participants[1]).to.equal(addr2.address);
     });    
 
     it("4 Should ignore invitation to a company already invited ", async function () {
-      const {  proponContract,  addr2, addr1} = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   addr2, addr1} = await loadFixture(deployProponandCreateCompanies);
       // create RFPs
-      await createRFP(proponContract, addr2, 3, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
-      await createRFP(proponContract, addr2, 0, ContestType.INVITATION, items, '0.0002')
+      await createRFP(proponLogicContract, addr2, 3, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
+      await createRFP(proponLogicContract, addr2, 0, ContestType.INVITATION, items, '0.0002')
       // get  company record
-      let company= await proponContract.getCompany(addr2.address)
+      let company= await proponDataContract.getCompany(addr2.address)
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  
-      await proponContract.connect(addr2).inviteCompaniestoRFP(    // invite addr1 company first time
+      await proponLogicContract.connect(addr2).inviteCompaniestoRFP(    // invite addr1 company first time
         RFPidx,
         test_pro_pon3.id,
         [addr1.address])
       // check is indeed invited
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
         expect(RFP.participants[0]).to.equal(addr1.address);        
      // try to invite addr1 company again, should ignore
-      await proponContract.connect(addr2).inviteCompaniestoRFP(
+      await proponLogicContract.connect(addr2).inviteCompaniestoRFP(
         RFPidx,
         test_pro_pon3.id,
         [addr1.address])
-      RFP = await proponContract.getRFPbyIndex(RFPidx)
+      RFP = await proponDataContract.getRFPbyIndex(RFPidx)
       expect(RFP.participants.length).to.equal(1)
     });   
     
     it("5 Should reject not RFP issuer invitation when company Id is wrong", async function () {
-      const {  proponContract,  owner, addr1, addr2 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2 } = await loadFixture(deployProponandCreateCompanies);
       // crete RFP
-      await createRFP(proponContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
-      await createRFP(proponContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
+      await createRFP(proponLogicContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
+      await createRFP(proponLogicContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
       // get RFP owner company record
-      let company= await proponContract.getCompany(owner.address)
+      let company= await proponDataContract.getCompany(owner.address)
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  // company from addr1
-      await expect(proponContract.inviteCompaniestoRFP(    // try to invite addr2 company from owner account
+      await expect(proponLogicContract.inviteCompaniestoRFP(    // try to invite addr2 company from owner account
         RFPidx,               
         test_pro_pon2.id,                                 // with worng COmpany Id (should be test_pro_pon1.id)
         [addr2.address]
@@ -751,15 +767,15 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });   
 
     it("6 Should reject not issuer company invitation when posing  as issuer company Id", async function () {
-      const {  proponContract,  owner, addr1, addr2 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2 } = await loadFixture(deployProponandCreateCompanies);
         // create RFP
-        await createRFP(proponContract, owner, 2, ContestType.OPEN, listItems2, '0.0002') 
-        await createRFP(proponContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
+        await createRFP(proponLogicContract, owner, 2, ContestType.OPEN, listItems2, '0.0002') 
+        await createRFP(proponLogicContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
       // get RFP owner company record
-      let company= await proponContract.getCompany(owner.address) 
+      let company= await proponDataContract.getCompany(owner.address) 
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  // Second RFP from owner company
-      await expect(proponContract.connect(addr1).inviteCompaniestoRFP(    // addr1 trying pass as owner
+      await expect(proponLogicContract.connect(addr1).inviteCompaniestoRFP(    // addr1 trying pass as owner
         RFPidx,
         test_pro_pon1.id,   // possing as Company Id of owner
         [addr2.address]       // invite addr2 company
@@ -767,17 +783,17 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });       
 
     it("7 Should reject a company inviting guest to  another company invitation RFP", async function () {
-      const {  proponContract,  owner, addr1, addr2, addr3 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3 } = await loadFixture(deployProponandCreateCompanies);
       // crete RFP
-      await createRFP(proponContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
-      await createRFP(proponContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
+      await createRFP(proponLogicContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
+      await createRFP(proponLogicContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
       // get RFP owner company record
-      let company= await proponContract.getCompany(owner.address)
+      let company= await proponDataContract.getCompany(owner.address)
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  // owner company invitation RFP
       // addr3 try to invite addr2 company to owner RFP 
-      // it should be rejected by validator of company id vs address (only_admin_can_perfomr)
-      await expect(proponContract.connect(addr3).inviteCompaniestoRFP(    
+      // xit should be rejected by validator of company id vs address (only_admin_can_perfomr)
+      await expect(proponLogicContract.connect(addr3).inviteCompaniestoRFP(    
         RFPidx,               
         test_pro_pon5.id, // correct add3 company Id
         [addr2.address]
@@ -785,17 +801,17 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });   
     
     it("8 Should reject a company inviting guests to another companys RFP", async function () {
-      const {  proponContract,  owner, addr1, addr2, addr3 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3 } = await loadFixture(deployProponandCreateCompanies);
       // crete RFP
-      await createRFP(proponContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
-      await createRFP(proponContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
+      await createRFP(proponLogicContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
+      await createRFP(proponLogicContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
       // get RFP owner company record
-      let company= await proponContract.getCompany(owner.address)
+      let company= await proponDataContract.getCompany(owner.address)
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  // company from addr1
       // try to pass invite addr2 company from addr3 account with its own company Id
       // will be detected not by checking company Id to address but RFP belonging to address
-      await expect(proponContract.connect(addr3).inviteCompaniestoRFP(    
+      await expect(proponLogicContract.connect(addr3).inviteCompaniestoRFP(    
         RFPidx,               
         test_pro_pon4.id, // right company Id, but RFP is not owned by company addr3
         [addr2.address]
@@ -804,16 +820,16 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
 
 
     it("9 Should reject a non owner of RFP inviting guests", async function () {
-      const {  proponContract,  owner, addr1, addr2, addr3 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3 } = await loadFixture(deployProponandCreateCompanies);
       // crete RFP
-      await createRFP(proponContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
-      await createRFP(proponContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
+      await createRFP(proponLogicContract, owner, 0, ContestType.OPEN, listItems2, '0.0002') 
+      await createRFP(proponLogicContract, owner, 1, ContestType.INVITATION, listItems1, '0.0002') 
       // get RFP owner company record
-      let company= await proponContract.getCompany(owner.address)
+      let company= await proponDataContract.getCompany(owner.address)
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  // company from addr1
       // try to pass invite addr2 company from addr3 account posing as owner address
-      await expect(proponContract.connect(addr3).inviteCompaniestoRFP(    
+      await expect(proponLogicContract.connect(addr3).inviteCompaniestoRFP(    
         RFPidx,               
         test_pro_pon1.id,                                 // posing as owner
         [addr2.address]
@@ -824,15 +840,15 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
 
   describe("Record participant registration to OPEN and INVITATION RFPs ", function () {
     it("10 Should reject a company trying to register to INVITATION RFP", async function () {
-      const {  proponContract,  owner, addr1 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1 } = await loadFixture(deployProponandCreateCompanies);
      // create RFPs
-     await createRFP(proponContract, owner, 3, ContestType.INVITATION, listItems3, '0.0003') // overpaying! should be alrigth
-     await createRFP(proponContract, owner, 0, ContestType.INVITATION, items, '0.0002')
+     await createRFP(proponLogicContract, owner, 3, ContestType.INVITATION, listItems3, '0.0003') // overpaying! should be alrigth
+     await createRFP(proponLogicContract, owner, 0, ContestType.INVITATION, items, '0.0002')
      // get  company record
-      let company= await proponContract.getCompany(owner.address) 
+      let company= await proponDataContract.getCompany(owner.address) 
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  // Second RFP from owner company Invitation RFP
-      await expect(proponContract.connect(addr1)
+      await expect(proponLogicContract.connect(addr1)
         .registertoOpenRFP(
         RFPidx, 
           {value: ethers.utils.parseEther('0.0001')}
@@ -841,33 +857,33 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });       
 
     it("11 Should allow recording addr2 company registering to owner company OPEN RFP", async function () {
-      const {  proponContract,  owner, addr2 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr2 } = await loadFixture(deployProponandCreateCompanies);
       // create RFPs
-      await createRFP(proponContract, owner, 3, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
-      await createRFP(proponContract, owner, 0, ContestType.INVITATION, items, '0.0002')
+      await createRFP(proponLogicContract, owner, 3, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
+      await createRFP(proponLogicContract, owner, 0, ContestType.INVITATION, items, '0.0002')
      // get  company record
-      let company= await proponContract.getCompany(owner.address)
+      let company= await proponDataContract.getCompany(owner.address)
       // retrieve first RFP of this company
       let RFPidx = await company.company_RFPs[0]  // First contest is open contest
-//      await proponContract.getRFPbyIndex(RFPidx)
-      await proponContract.connect(addr2).registertoOpenRFP(
+//      await proponDataContract.getRFPbyIndex(RFPidx)
+      await proponLogicContract.connect(addr2).registertoOpenRFP(
           RFPidx,  
           {value: ethers.utils.parseEther('0.0001')}
       )
-      let RFP = await proponContract.getRFPbyIndex(RFPidx)
+      let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
       expect(RFP.participants[0]).to.equal(addr2.address);
     });
 
     it("12 Should reject addr2  registering to its own open RFP", async function () {
-      const {  proponContract, addr2 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,  addr2 } = await loadFixture(deployProponandCreateCompanies);
       // create RFPs
-      await createRFP(proponContract, addr2, 1, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
-      await createRFP(proponContract, addr2, 2, ContestType.INVITATION, listItems1, '0.0002')
+      await createRFP(proponLogicContract, addr2, 1, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
+      await createRFP(proponLogicContract, addr2, 2, ContestType.INVITATION, listItems1, '0.0002')
      // get  company record
-      let company= await proponContract.getCompany(addr2.address)
+      let company= await proponDataContract.getCompany(addr2.address)
       // retrieve first RFP of this company
       let RFPidx = await company.company_RFPs[0]  // first contest is open contest
-      await expect(proponContract.connect(addr2)
+      await expect(proponLogicContract.connect(addr2)
         .registertoOpenRFP(
             RFPidx,  
             {value: ethers.utils.parseEther('0.0001')}))
@@ -875,15 +891,15 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
     });
 
     it("13 Should reject a company registering under price to OPEN RFP", async function () {
-      const {  proponContract,  owner, addr1 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1 } = await loadFixture(deployProponandCreateCompanies);
      // create RFPs
-     await createRFP(proponContract, owner, 1, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
-     await createRFP(proponContract, owner, 0, ContestType.OPEN, items, '0.0002')
+     await createRFP(proponLogicContract, owner, 1, ContestType.OPEN, listItems3, '0.0003') // overpaying! should be alrigth
+     await createRFP(proponLogicContract, owner, 0, ContestType.OPEN, items, '0.0002')
      // get  company record
-      let company= await proponContract.getCompany(owner.address) 
+      let company= await proponDataContract.getCompany(owner.address) 
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[1]  // Second RFP from owner company OPEN RFP
-      await expect(proponContract.connect(addr1)
+      await expect(proponLogicContract.connect(addr1)
         .registertoOpenRFP(
         RFPidx, 
           {value: ethers.utils.parseEther('0.00001')}
@@ -893,55 +909,55 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
 
 
     it("14 Should record five companies to open", async function () {
-      const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5,addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 1, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, owner, 0, ContestType.OPEN, items, '0.0002')
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3, addr4, addr5,addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 1, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, owner, 0, ContestType.OPEN, items, '0.0002')
       // get  company record
-      let company= await proponContract.getCompany(owner.address) 
+      let company= await proponDataContract.getCompany(owner.address) 
       let RFPidx = await company.company_RFPs[0]  // first contest is open contest
-      await proponContract.connect(addr1).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr2).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr3).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr4).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr5).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      let rfp= await proponContract.getRFPbyIndex(RFPidx)   // bring again value from contract after those registers
+      await proponLogicContract.connect(addr1).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr2).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr3).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr4).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr5).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      let rfp= await proponDataContract.getRFPbyIndex(RFPidx)   // bring again value from contract after those registers
       expect(rfp.participants.length).to.equal(5);
     });
 
 
       // To test this should set  uint MAX_GUEST_OPEN_TENDER = 5 in propon contract
     it("15 Should reject more companies than MAX_GUEST_OPEN_TENDER register to open tender", async function () {
-      const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5,addr6} = await loadFixture(deployProponandCreateCompanies);
-      await createRFP(proponContract, owner, 1, ContestType.OPEN, listItems3, '0.0002')
-      await createRFP(proponContract, owner, 0, ContestType.OPEN, items, '0.0002')
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3, addr4, addr5,addr6} = await loadFixture(deployProponandCreateCompanies);
+      await createRFP(proponLogicContract, owner, 1, ContestType.OPEN, listItems3, '0.0002')
+      await createRFP(proponLogicContract, owner, 0, ContestType.OPEN, items, '0.0002')
       // get  company record
-      let company= await proponContract.getCompany(owner.address) 
+      let company= await proponDataContract.getCompany(owner.address) 
       // set MAX_GUEST_OPEN_TENDER to 5
-      await proponContract.setMaxGuestOpenTender(5)
+      await proponDataContract.setMaxGuestOpenTender(5)
       // retrieve second RFP of this company
       let RFPidx = await company.company_RFPs[0]  // first contest is open contest
-      await proponContract.connect(addr1).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr2).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr3).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr4).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr5).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
-      await expect(proponContract.connect(addr6).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')}))
+      await proponLogicContract.connect(addr1).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr2).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr3).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr4).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr5).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')})
+      await expect(proponLogicContract.connect(addr6).registertoOpenRFP(RFPidx,  {value: ethers.utils.parseEther('0.0001')}))
       .to.be.revertedWith("max_participants_reached")
       });
   });
 
 describe("Validate number of invitation and registering intents  to OPEN and INVITATION RFPs ", function () {
   it("1 Should reject trying registering more than MAX_GUEST_INVITATION_TENDER guest invited to INVITATION contest", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // crete RFP
-      await createRFP(proponContract, owner, 1, ContestType.OPEN, listItems1, '0.0002') 
-      await createRFP(proponContract, owner, 2, ContestType.INVITATION, listItems3, '0.0002') 
+      await createRFP(proponLogicContract, owner, 1, ContestType.OPEN, listItems1, '0.0002') 
+      await createRFP(proponLogicContract, owner, 2, ContestType.INVITATION, listItems3, '0.0002') 
     // get RFP owner company record
-    let company= await proponContract.getCompany(owner.address) 
-    await proponContract.setMaxGuestInvitationTender(5)
+    let company= await proponDataContract.getCompany(owner.address) 
+    await proponDataContract.setMaxGuestInvitationTender(5)
     // retrieve second RFP of this company
     let RFPidx = await company.company_RFPs[1]  // Second RFP from owner company
-    await expect(proponContract.connect(owner).inviteCompaniestoRFP(    // addr1 trying pass as owner
+    await expect(proponLogicContract.connect(owner).inviteCompaniestoRFP(    // addr1 trying pass as owner
       RFPidx,
       test_pro_pon1.id,   // Company Id of owner
       [addr1.address,addr2.address,addr3.address,addr4.address,addr5.address,addr6.address]       // invite 6 companies company
@@ -949,51 +965,51 @@ describe("Validate number of invitation and registering intents  to OPEN and INV
   }); 
 
   it("2 Should allow registering less than MAX_GUEST_INVITATION_TENDER guests invited to INVITATION contest", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // crete RFP
-      await createRFP(proponContract, owner, 1, ContestType.OPEN, listItems1, '0.0002') 
-      await createRFP(proponContract, owner, 2, ContestType.INVITATION, listItems3, '0.0002') 
+      await createRFP(proponLogicContract, owner, 1, ContestType.OPEN, listItems1, '0.0002') 
+      await createRFP(proponLogicContract, owner, 2, ContestType.INVITATION, listItems3, '0.0002') 
     // get RFP owner company record
-    let company= await proponContract.getCompany(owner.address) 
+    let company= await proponDataContract.getCompany(owner.address) 
     // retrieve second RFP of this company
     let RFPidx = await company.company_RFPs[1]  // Second RFP from owner company
-    await proponContract.connect(owner).inviteCompaniestoRFP(    // addr1 trying pass as owner
+    await proponLogicContract.connect(owner).inviteCompaniestoRFP(    // addr1 trying pass as owner
       RFPidx,
       test_pro_pon1.id,   // Company Id of owner
       [addr1.address,addr2.address,addr3.address,addr4.address,addr5.address]       // invite 5 companies company
       )
-      let rfp= await proponContract.getRFPbyIndex(1)   // bring again value from contract after those registers
+      let rfp= await proponDataContract.getRFPbyIndex(1)   // bring again value from contract after those registers
       expect(rfp.participants.length).to.equal(5);
     }); 
 
     it("3 Should reject trying to accumulate more than MAX_GUEST_INVITATION_TENDER guest invited to INVITATION contest in several calls ", async function () {
-      const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
         // crete RFP
-        await createRFP(proponContract, owner, 1, ContestType.OPEN, listItems1, '0.0002') 
-        await createRFP(proponContract, owner, 2, ContestType.INVITATION, listItems1, '0.0002') 
+        await createRFP(proponLogicContract, owner, 1, ContestType.OPEN, listItems1, '0.0002') 
+        await createRFP(proponLogicContract, owner, 2, ContestType.INVITATION, listItems1, '0.0002') 
       // get RFP owner company record
-      let company= await proponContract.getCompany(owner.address) 
-      await proponContract.setMaxGuestInvitationTender(5)
+      let company= await proponDataContract.getCompany(owner.address) 
+      await proponDataContract.setMaxGuestInvitationTender(5)
       let RFPidx = await company.company_RFPs[1]  // Second RFP from owner company
       // First invitation batch, invite 2 companies
-      await proponContract.connect(owner).inviteCompaniestoRFP(    
+      await proponLogicContract.connect(owner).inviteCompaniestoRFP(    
         RFPidx,
         test_pro_pon1.id,   // Company Id of owner
         [addr1.address,addr2.address]       // invite 2 companies company
         )
-      let rfp= await proponContract.getRFPbyIndex(1)   // bring again value from contract after those registers
+      let rfp= await proponDataContract.getRFPbyIndex(1)   // bring again value from contract after those registers
       expect(rfp.participants.length).to.equal(2);
       // Second invitation batch, invite 2 companies
-      await proponContract.connect(owner).inviteCompaniestoRFP(    
+      await proponLogicContract.connect(owner).inviteCompaniestoRFP(    
         RFPidx,
         test_pro_pon1.id,   // Company Id of owner
         [addr3.address,addr4.address]       // invite 2 companies company
         )
-      rfp= await proponContract.getRFPbyIndex(1)   // bring again value from contract after those registers
+      rfp= await proponDataContract.getRFPbyIndex(1)   // bring again value from contract after those registers
 
       expect(rfp.participants.length).to.equal(4);
-      // Third invitation batch, invite 2 companies, it should be rejected
-      await expect(proponContract.connect(owner).inviteCompaniestoRFP(    // invite another 2 companies, tryuing making 6 guests
+      // Third invitation batch, invite 2 companies, xit should be rejected
+      await expect(proponLogicContract.connect(owner).inviteCompaniestoRFP(    // invite another 2 companies, tryuing making 6 guests
       RFPidx,
       test_pro_pon1.id,   // Company Id of owner
       [addr5.address,addr6.address]       // invite 2 companies company

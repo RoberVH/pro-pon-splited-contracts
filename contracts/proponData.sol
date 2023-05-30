@@ -16,6 +16,9 @@ contract pro_ponData is proponShared {
     //Owner authorized to make changes to data
     address private owner;
 
+    // Manager authorized to set constants values and detroy contract
+    address private manager;
+
     // A company must pay to get recorder into system
     uint256 public CREATE_COMPANY_PRICE= 0.0001 ether;
 
@@ -123,14 +126,20 @@ contract pro_ponData is proponShared {
     mapping (bytes32 => bool) RfpIds;   
     
     // Modifiers ***************************************************************
-    // only owner can do administrative task as withdrawing
+    // only owner can do administrative task 
     modifier onlyOwner() {
-        require(msg.sender == owner, 'Only_owner_allowed');
+        require(msg.sender == owner, 'only_owner_allowed');
+        _;
+    }
+
+    modifier onlyManager() {
+        require(msg.sender == manager, 'only_manager_allowed');
         _;
     }
 
     constructor() {
         owner = msg.sender;
+        manager = msg.sender;
     }
 
     // getters/setters
@@ -138,39 +147,38 @@ contract pro_ponData is proponShared {
     //**********************Setters ***************************************** */
 
 
-
-
-    // Variables of capacity and price
     function setOwner(address _newOwner) external onlyOwner {
         owner=_newOwner;
     }
 
-    function setCREATE_COMPANY_PRICE(uint256 _value) external onlyOwner {
+    function setManager(address _newManager) external onlyManager {
+        manager=_newManager;
+    }
+    // Variables of capacity and price
+
+ 
+    function setCreateCompanyPrice(uint256 _value) external onlyManager {
         CREATE_COMPANY_PRICE = _value;
     }
 
-    function setCREATE_OPEN_RFP_PRICE(uint256 _value) external onlyOwner {
+    function setCreateOpenRfpPrice(uint256 _value) external onlyManager {
         CREATE_OPEN_RFP_PRICE = _value;
     }
 
-    function setCREATE_INVITATION_RFP_PRICE(uint256 _value) external onlyOwner {
+    function setCreateInvitationRfpPrice(uint256 _value) external onlyManager {
         CREATE_INVITATION_RFP_PRICE = _value;
     }
 
-    function setREGISTER_OPEN_RFP_PRICE(uint256 _value) external onlyOwner {
+    function setRegisterOpenRfpPrice(uint256 _value) external onlyManager {
         REGISTER_OPEN_RFP_PRICE = _value;
     }
 
-    function setMAX_GUEST_OPEN_TENDER(uint _value) external onlyOwner {
+    function setMaxGuestOpenTender(uint _value) external onlyManager {
         MAX_GUEST_OPEN_TENDER = _value;
     }
 
-    function setMAX_GUEST_INVITATION_TENDER(uint _value) external onlyOwner {
+    function setMaxGuestInvitationTender(uint _value) external onlyManager {
         MAX_GUEST_INVITATION_TENDER = _value;
-    }
-
-    function setCurrentRFPIdx(uint _value) external onlyOwner {
-        currentRFPIdx = _value;
     }
 
     // Entities setters **********************
@@ -198,6 +206,10 @@ contract pro_ponData is proponShared {
     }
 
     // other modifying entitiies functions
+
+    function incrementRFPIdx() external onlyOwner {
+        currentRFPIdx += 1;
+    }
     
     function addCompanyRFP(address companyAddress, uint256 rfpIdx) external onlyOwner {
      Companies[companyAddress].company_RFPs.push(rfpIdx);
@@ -207,10 +219,48 @@ contract pro_ponData is proponShared {
         RFPs[rfpId].participants.push(participant);
     }
 
-
-    function incrementRFPIdx() external onlyOwner {
-        currentRFPIdx += 1;
+    function setRFPCanceled(uint256 _rfpIndex, bool _canceled) external {
+        RFPs[_rfpIndex].canceled = _canceled;
     }
+
+    function setRFPCancelDate(uint256 _rfpIndex, uint256 _cancelDate) external {
+        RFPs[_rfpIndex].cancelDate = _cancelDate;
+    }
+
+
+    function addDocument(
+        uint _rfpIdx,
+        uint _docType,
+        string memory _name,
+        address _owner,
+        string memory _documentHash,
+        string memory _idx
+    ) external onlyOwner {
+        Document memory newDocument = Document(
+            _docType,
+            _name,
+            _owner,
+            _documentHash,
+            _idx
+        );
+        RFPDocuments[_rfpIdx].push(newDocument);
+    }
+
+    function addWinnersToRFP(uint _rfpIndex, address[] memory  winners) external onlyOwner {
+        // RFP storage rfp = RFPs[_rfpIndex];
+        // rfp.winners.push(winner);
+        //RFPs[_rfpIndex].winners.push(winner);
+        RFPs[_rfpIndex].winners = winners;
+    }
+
+    function acrueWinsToCompany (uint _rfpIndex, address [] memory winners) external onlyOwner {
+        uint numberOfWinners = winners.length;
+        for (uint i = 0; i< numberOfWinners; i++ ) {
+            Companies[winners[i]].RFPsWins.push(_rfpIndex);
+        }
+    }
+
+
 
 
 
@@ -226,6 +276,14 @@ contract pro_ponData is proponShared {
         return owner;
     }
 
+    // returns current address manager
+    function getManager() external view returns (address ) {
+        return manager;
+    }
+
+   function getCancelDate(uint _rfpIndex) public view returns(uint) {
+        return RFPs[_rfpIndex].cancelDate;
+    }
     // Company Getters  ----------------------------------------
 
     // returns current id of company ofr companyAddress owner
@@ -247,12 +305,30 @@ contract pro_ponData is proponShared {
         return CompanyidTaken[_id];
     }
 
+    function getWinners(uint _rfpIndex) public view returns (address[] memory ) {
+        return RFPs[_rfpIndex].winners;
+    }
+
+    function getCompanyWins() public view returns (uint[] memory ) {
+        return Companies[msg.sender].RFPsWins;
+    }
+
+
+    function getCompanyRFPs(address account) public view returns (uint[] memory) {
+        return Companies[account].company_RFPs;
+    }
+
     //   RFP Getters  ----------------------------------------
 
     // returns the RFP whole record on mapping _rfpIdx index
     function getRFP(uint256 rfpId) public view returns (RFP memory) {
         return RFPs[rfpId];
     }    
+
+    // getRFPbyIndex receive an index and returns the RFP if exists
+    function getRFPbyIndex(uint _rfpId) public view returns (RFP memory) {
+        return RFPs[_rfpId];
+    }
 
     // returns current issuer address of rfpIdx RFP
     function getRFPIssuer(uint rfpIdx) external view returns (address) {
@@ -267,8 +343,15 @@ contract pro_ponData is proponShared {
     function getRfpIds(bytes32 pair) external view returns (bool) {
         return RfpIds[pair];
     }
-
+    // Document Getters
+    function getDocumentsfromRFP(uint _rfpIdx) view external returns (Document[] memory) {
+        return (RFPDocuments[_rfpIdx]);
+    }
     
+    // final device to kill contract - escape function for live testing
+    function  destroy() public onlyManager{
+         selfdestruct(payable(owner));  
+    }
 }
 
 

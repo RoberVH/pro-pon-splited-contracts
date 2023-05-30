@@ -605,13 +605,3 @@ it("13 Should reject  owner of Open RFP declaring winners before endDate reached
     .to.be.revertedWith('enddate_not_reached_yet')
   });    
 }); 
-
-
-
-// declare winners for first OPEN RFP
-// let winers = [
-//   owner.address, addr5.address, addr5.address, addr5.address, owner.address
-// ]
-// let rfpINDEX=0   
-// //  // declare owner accouunt winner
-// await proponContract.connect(addr1).declareWinners( rfpINDEX, test_pro_pon2.id, winers)
