@@ -1,8 +1,3 @@
-/**
- * ALL TEST HERE ARE FOR TIME READY-FOR-PRODUCTION CONTRACT WHERE NEXT LINE:
- *  require(_openDate >= block.timestamp - 3600,'opendate_behind_today'); // allow one hour behind!
- * IS UNCOMMENTED
-  */
 
 const { expect } = require("chai")
 //const { describe, it } = require("mocha")
@@ -59,7 +54,7 @@ const test_pro_pon3 = {
   }
 
   // ConvertDatesAgo - convert date minus number of daysAgo to unix epoch
-  // if daysAgo is negative it returns today dates + daysAgo date
+  // if daysAgo is negative it returns today dates + daysAgo date - The Future
   function convertDatesAgo(daysAgo) {
     let today= new Date()
     let convertedDay= new Date(today)
@@ -183,11 +178,11 @@ const listItems3 = [
   "Compra de 3 cigüeñales marca l'oreal älphièrzar",
   "maintenance de l'instrument element xr 4074 E"
 ]
-const createRFP = async (proponContract, address, RFPNameIdx, ContestType, ItemsList, value) => {
+const createRFP = async (proponLogicContract, address, RFPNameIdx, ContestType, ItemsList, value) => {
   let openDate=convertDatesAgo(5)
   let endReceiving=convertDatesAgo(2)
   let endDate=convertDatesAgo(1) 
-  await proponContract.connect(address).createRFP(
+  await proponLogicContract.connect(address).createRFP(
     IDRFP[RFPNameIdx],
     nameRfp[RFPNameIdx],
     rfpWebLink[RFPNameIdx],
@@ -205,25 +200,40 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
   async function deployProponandCreateCompanies() {
     // Get the ContractFactory and Signers here.
     const [owner, addr1, addr2, addr3, addr4, addr5,addr6] = await ethers.getSigners();
-    const propon = await ethers.getContractFactory("pro_pon");
-    const proponContract = await propon.deploy();
+    const proponData = await ethers.getContractFactory("pro_ponData");
+    const proponDataContract = await proponData.deploy();
+    // console.log('proponDataContract',proponDataContract.address)
+    // console.log('owner of proponDataContract', await proponDataContract.getOwner());
+  
+    const proponLogic = await ethers.getContractFactory("pro_ponLogic");
+    const proponLogicContract = await proponLogic.deploy(
+      proponDataContract.address
+    );
+  
+    // console.log('proponLogicContract', proponLogicContract.address)
+    // console.log('Setting Datacontract owner')
+    await proponDataContract.setOwner(proponLogicContract.address);
+  
+    const clockTest = await ethers.getContractFactory("clockTest");
+    const clockTestContract = await clockTest.deploy();
+    
     
     //company 1 from owner account
-    let txn = await proponContract.createCompany(
+    let txn = await proponLogicContract.createCompany(
       test_pro_pon1.id,
       test_pro_pon1.name,
       test_pro_pon1.country,
       {value: ethers.utils.parseEther('0.0001')}
       )
       // company 2 from addr1 account
-    txn = await proponContract.connect(addr1).createCompany(
+    txn = await proponLogicContract.connect(addr1).createCompany(
         test_pro_pon2.id,
         test_pro_pon2.name,
         test_pro_pon2.country,
         {value: ethers.utils.parseEther('0.0001')}
         )      
     // company 3 from addr2 account
-    txn = await proponContract.connect(addr2).createCompany(
+    txn = await proponLogicContract.connect(addr2).createCompany(
         test_pro_pon3.id,
         test_pro_pon3.name,
         test_pro_pon3.country,
@@ -231,7 +241,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         ) 
 
     // company 4 from addr3
-    txn = await proponContract.connect(addr3).createCompany(
+    txn = await proponLogicContract.connect(addr3).createCompany(
       test_pro_pon4.id,
       test_pro_pon4.name,
       test_pro_pon4.country,
@@ -239,7 +249,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       ) 
     
     // company 5 from addr4
-    txn = await proponContract.connect(addr4).createCompany(
+    txn = await proponLogicContract.connect(addr4).createCompany(
       test_pro_pon5.id,
       test_pro_pon5.name,
       test_pro_pon5.country,
@@ -247,7 +257,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       ) 
 
       // company 6 from addr5
-      txn = await proponContract.connect(addr5).createCompany(
+      txn = await proponLogicContract.connect(addr5).createCompany(
       test_pro_pon6.id,
       test_pro_pon6.name,
       test_pro_pon6.country,
@@ -255,28 +265,28 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       ) 
 
       // company 7 from addr6
-      txn = await proponContract.connect(addr6).createCompany(
+      txn = await proponLogicContract.connect(addr6).createCompany(
         test_pro_pon7.id,
         test_pro_pon7.name,
         test_pro_pon7.country,
         {value: ethers.utils.parseEther('0.0001')}
         ) 
 
-    return { proponContract, owner, addr1, addr2, addr3, addr4, addr5,addr6 };
+     return {proponDataContract, proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4, addr5,addr6 }
   }  
     
   
 
  describe("***********************************RFP6.js ********************************************\n   Validate dates when creating RFPs", function () {
    it("1 Should accept creating an  RFP starting rigth now", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // create RFP with Open Date major than end receiveing date
       let openDate=convertDatesAgo(0) 
       let endReceiving=convertDatesAgo(-3) //3 day from now
       let endDate=convertDatesAgo(-9) // 9 days from today
       
       
-      await proponContract.connect(addr1).createRFP(
+      await proponLogicContract.connect(addr1).createRFP(
         IDRFP[0],        // name
         nameRfp[0],   // description
         rfpWebLink[0], // RFP's web site link
@@ -286,18 +296,18 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         ContestType.OPEN,
         listItems1,
         {value: ethers.utils.parseEther('0.0002')})
-        const RFP = await proponContract.getRFPbyIndex(0)
+        const RFP = await proponDataContract.getRFPbyIndex(0)
         expect(RFP.name).to.equals(IDRFP[0])
    });
       
 
    it("2 Should reject creating RFP with opening date older than 1 hour", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // create RFP with end receiving Date major than end end Date 
       let openDate=convertDatesAgo(0) - 4600 // today
       let endReceiving=convertDatesAgo(-10) // 10 days into future
       let endDate=convertDatesAgo(-11) // 9 days into future, i.e. is short 1 day that receiving dateline
-      await expect(proponContract.connect(addr1).createRFP(
+      await expect(proponLogicContract.connect(addr1).createRFP(
         IDRFP[0],        // name
         nameRfp[0],   // description
         rfpWebLink[0], // RFP's web site link
@@ -310,12 +320,12 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       });
       
     it("3 Should accept creating RFP with opening date older than 1/2 hour", async function () {
-      const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+      const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // create RFP with end receiving Date major than end end Date 
       let openDate=convertDatesAgo(0) - 1800  // today with half an hour delay
       let endReceiving=convertDatesAgo(-5) // 5 days into future
       let endDate=convertDatesAgo(-9) // 9 days into future, i.e. is short 1 day that receiving dateline
-      await proponContract.connect(addr1).createRFP(
+      await proponLogicContract.connect(addr1).createRFP(
         IDRFP[0],        // name
         nameRfp[0],   // description
         rfpWebLink[0], // RFP's web site link
@@ -326,18 +336,18 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
         listItems1,
         {value: ethers.utils.parseEther('0.0002')}
       )
-      const RFP = await proponContract.getRFPbyIndex(0)
+      const RFP = await proponDataContract.getRFPbyIndex(0)
       expect(RFP.name).to.equals(IDRFP[0])
    });
 
 
    it("4 Should reject trying create RFP with end receiving date equal to receiving Date", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // create RFP with Open Date major than end receiveing date
       let openDate=convertDatesAgo(-1)  // today
       let endReceiving=convertDatesAgo(-1) -7200 // same
       let endDate=convertDatesAgo(-9) // 9 days into future, i.e. is short 1 day that receiving dateline
-      await expect(proponContract.connect(addr1).createRFP(
+      await expect(proponLogicContract.connect(addr1).createRFP(
         IDRFP[0],        // name
         nameRfp[0],   // description
         rfpWebLink[0], // RFP's web site link
@@ -351,13 +361,13 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
    });
 
   it("5 Should reject trying create RFP with end receiving date equal to endDate", async function () {
-  const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+  const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
     // create RFP with Open Date major than end receiveing date
     let openDate=convertDatesAgo(0) // today
     let endReceiving=convertDatesAgo(-3) // 3 days from today
     let endDate=convertDatesAgo(-3) // 3 days from today, i.e. is equal to receiving dateline
 
-    await expect(proponContract.connect(addr1).createRFP(
+    await expect(proponLogicContract.connect(addr1).createRFP(
       IDRFP[0],        // name
       nameRfp[0],   // description
       rfpWebLink[0], // RFP's web site link
@@ -371,13 +381,13 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
 });
 
   it("6 Should accept creating RFP with openDate as of today", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
     // create RFP with Open Date major than end receiveing date
     let openDate=convertDatesAgo(0) // today
     let endReceiving=convertDatesAgo(-1) // 1 days from today
     let endDate=convertDatesAgo(-2) // 2 days from today, i.e. is equal to receiving dateline
 
-    await proponContract.connect(addr1).createRFP(
+    await proponLogicContract.connect(addr1).createRFP(
       IDRFP[0],        // name
       nameRfp[0],   // description
       rfpWebLink[0], // RFP's web site link
@@ -388,20 +398,20 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       listItems1,
       {value: ethers.utils.parseEther('0.0002')}
     )
-    let RFP = await  proponContract.getRFPbyIndex(0)
+    let RFP = await  proponDataContract.getRFPbyIndex(0)
     expect(RFP.name).to.equal(IDRFP[0])
   });
 
 
 // require(_openDate >= block.timestamp - 3600,'opendate_behind_today'); // allow one hour behind! 
   it("7 Should reject creating RFP with openDate older that today", async function () {
-  const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+  const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
     // create RFP with Open Date major than end receiveing date
     let openDate=convertDatesAgo(20) // 20 days ago
     let endReceiving=convertDatesAgo(15) // 15 days ago
     let endDate=convertDatesAgo(5) // 5 days ago
 
-    await expect(proponContract.connect(addr1).createRFP(
+    await expect(proponLogicContract.connect(addr1).createRFP(
       IDRFP[0],        // name
       nameRfp[0],   // description
       rfpWebLink[0], // RFP's web site link
@@ -420,15 +430,15 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
 // 
 // COMO ESTA, CUANDO YA VENCIO LA FECHA PARA RECIBIR DOCUMENTOS PODRAN HACERLO PERO NO PODRAN SUBIR DOCUMENTOS AL CONCURSO
 
-xit("8 Should reject inviting companies to RFP when Receiving Date has been reached", async function () {
-  const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+it("8 Should reject inviting companies to RFP when Receiving Date has been reached", async function () {
+  const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
     // create RFP with Open Date major than end receiveing date
     // dates within the 1 hour behind range permitted by the contract
     let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
     let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
     let endDate=convertDatesAgo(0)  // Now
 
-    await proponContract.connect(addr1).createRFP(
+    await proponLogicContract.connect(addr1).createRFP(
       IDRFP[1],        // name
       nameRfp[1],   // description
       rfpWebLink[1], // RFP's web site link
@@ -440,10 +450,10 @@ xit("8 Should reject inviting companies to RFP when Receiving Date has been reac
       {value: ethers.utils.parseEther('0.0002')}
     )
     const rfpINDEX = 0
-    const RFP = await proponContract.getRFPbyIndex(rfpINDEX)
+    const RFP = await proponDataContract.getRFPbyIndex(rfpINDEX)
     expect(RFP.name).to.equals(IDRFP[1])
     // this operation will be past the receiving Data end
-    await expect(proponContract.connect(addr1).inviteCompaniestoRFP(
+    await expect(proponLogicContract.connect(addr1).inviteCompaniestoRFP(
       rfpINDEX, //invitation RFP index
       test_pro_pon2.id, // id of addr2 company
       [owner.address,addr2.address,addr3.address,addr5.address]
@@ -451,14 +461,14 @@ xit("8 Should reject inviting companies to RFP when Receiving Date has been reac
   });
 
 it("9 Should reject inviting companies to RFP when RFP is already canceled", async function () {
-  const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+  const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
     // create RFP with Open Date major than end receiveing date
     // dates within the 1 hour behind range permitted by the contract
     let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
     let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
     let endDate=convertDatesAgo(0)  // Now
 
-    await proponContract.connect(addr1).createRFP(
+    await proponLogicContract.connect(addr1).createRFP(
       IDRFP[1],        // name
       nameRfp[1],   // description
       rfpWebLink[1], // RFP's web site link
@@ -470,12 +480,12 @@ it("9 Should reject inviting companies to RFP when RFP is already canceled", asy
       {value: ethers.utils.parseEther('0.0002')}
     )
     const rfpINDEX = 0
-    const RFP = await proponContract.getRFPbyIndex(rfpINDEX)
+    const RFP = await proponDataContract.getRFPbyIndex(rfpINDEX)
     expect(RFP.name).to.equals(IDRFP[1])
     // this operation will be past the receiving Data end
     const today= convertDatesAgo(0)
-    await proponContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX )
-    await expect(proponContract.connect(addr1).inviteCompaniestoRFP(
+    await proponLogicContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX )
+    await expect(proponLogicContract.connect(addr1).inviteCompaniestoRFP(
       rfpINDEX, //invitation RFP index
       test_pro_pon2.id, // id of addr2 company
       [owner.address,addr2.address,addr3.address,addr5.address]
@@ -483,14 +493,14 @@ it("9 Should reject inviting companies to RFP when RFP is already canceled", asy
   });
 
   it("10 Should reject self registeringto RFP when RFP is already canceled", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // create RFP with Open Date major than end receiveing date
       // dates within the 1 hour behind range permitted by the contract
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0)  // Now
   
-      await proponContract.connect(addr1).createRFP(
+      await proponLogicContract.connect(addr1).createRFP(
         IDRFP[1],        // name
         nameRfp[1],   // description
         rfpWebLink[1], // RFP's web site link
@@ -502,24 +512,24 @@ it("9 Should reject inviting companies to RFP when RFP is already canceled", asy
         {value: ethers.utils.parseEther('0.0002')}
       )
       const rfpINDEX = 0
-      const RFP = await proponContract.getRFPbyIndex(rfpINDEX)
+      const RFP = await proponDataContract.getRFPbyIndex(rfpINDEX)
       expect(RFP.name).to.equals(IDRFP[1])
       // this operation will be past the receiving Data end
       const today= convertDatesAgo(0)
-      await proponContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX )
-      await expect(proponContract.connect(owner).registertoOpenRFP(rfpINDEX, {value: ethers.utils.parseEther('0.0001')})      
+      await proponLogicContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX )
+      await expect(proponLogicContract.connect(owner).registertoOpenRFP(rfpINDEX, {value: ethers.utils.parseEther('0.0001')})      
       ).to.be.revertedWith('already_canceled')
     });
 
   it("11 Should reject declaring RFP winners  when RFP is already canceled", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // create RFP with Open Date major than end receiveing date
       // dates within the 1 hour behind range permitted by the contract
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0)  // Now
   
-      await proponContract.connect(addr1).createRFP(
+      await proponLogicContract.connect(addr1).createRFP(
         IDRFP[1],        // name
         nameRfp[1],   // description
         rfpWebLink[1], // RFP's web site link
@@ -531,24 +541,24 @@ it("9 Should reject inviting companies to RFP when RFP is already canceled", asy
         {value: ethers.utils.parseEther('0.0002')}
       )
       const rfpINDEX = 0
-      const RFP = await proponContract.getRFPbyIndex(rfpINDEX)
+      const RFP = await proponDataContract.getRFPbyIndex(rfpINDEX)
       expect(RFP.name).to.equals(IDRFP[1])
       // this operation will be past the receiving Data end
       const today= convertDatesAgo(0)
-      await proponContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX )
+      await proponLogicContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX )
       let winers = [owner.address, addr5.address, addr5.address, addr5.address, owner.address]
       // declare owner accouunt winner
-      await expect( proponContract.connect(addr1).declareWinners( rfpINDEX, test_pro_pon2.id, winers)).to.be.revertedWith('already_canceled')
+      await expect( proponLogicContract.connect(addr1).declareWinners( rfpINDEX, test_pro_pon2.id, winers)).to.be.revertedWith('already_canceled')
     });
 
   it("12 Should reject cancelling an RFP  when is already canceled", async function () {
-    const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+    const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
       // create RFP with Open Date major than end receiveing date
       // dates within the 1 hour behind range permitted by the contract
       let openDate=convertDatesAgo(0) - (15 * 60) // 15 mins ago
       let endReceiving=convertDatesAgo(0) - (10 * 60) // 10 mins ago
       let endDate=convertDatesAgo(0) -(2 * 60)  // Now
-      await proponContract.connect(addr1).createRFP(
+      await proponLogicContract.connect(addr1).createRFP(
         IDRFP[1],        // name
         nameRfp[1],   // description
         rfpWebLink[1], // RFP's web site link
@@ -560,26 +570,25 @@ it("9 Should reject inviting companies to RFP when RFP is already canceled", asy
         {value: ethers.utils.parseEther('0.0002')}
       )
       const rfpINDEX = 0
-      const RFP = await proponContract.getRFPbyIndex(rfpINDEX)
+      const RFP = await proponDataContract.getRFPbyIndex(rfpINDEX)
       expect(RFP.name).to.equals(IDRFP[1])
-      await proponContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX)
-      //const cancelDate= await proponContract.getCancelDate(rfpINDEX)
+      await proponLogicContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX)
       //try to cancel an already cancelled RFP
-      await expect(proponContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX)).to.be.revertedWith('already_canceled')
+      await expect(proponLogicContract.connect(addr1).cancelRFP(test_pro_pon2.id, rfpINDEX)).to.be.revertedWith('already_canceled')
     });
 
 it("13 Should reject  owner of Open RFP declaring winners before endDate reached", async function () {
-  const {  proponContract,  owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
+  const { proponDataContract,  proponLogicContract, clockTestContract,   owner, addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandCreateCompanies);
 
-    let openDate=convertDatesAgo(0) - (20 * 60)
-    let endReceiving=convertDatesAgo(0) - (10 * 60)
+    let openDate=convertDatesAgo(0) - (40 * 60)
+    let endReceiving=convertDatesAgo(-1)
     let endDate=convertDatesAgo(-20) // 10 days into future
     // console.log('endReceiving',convertUnixToDate(endReceiving))
 //    console.log('openDate',convertUnixToDate(openDate))
     // console.log('endDate',convertUnixToDate(endDate))
     
     // create a correct Open RFP
-    await proponContract.connect(addr1).createRFP(
+    await proponLogicContract.connect(addr1).createRFP(
       IDRFP[0],        // name
       nameRfp[0],   // description
       rfpWebLink[0], // RFP's web site link
@@ -591,17 +600,17 @@ it("13 Should reject  owner of Open RFP declaring winners before endDate reached
       {value: ethers.utils.parseEther('0.0002')}
     )
     //  addr1, addr2, addr3, addr5 companies register to the Open RFP 
-    await proponContract.connect(owner).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
-    await proponContract.connect(addr2).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
-    await proponContract.connect(addr3).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
-    await proponContract.connect(addr5).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
+    await proponLogicContract.connect(owner).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
+    await proponLogicContract.connect(addr2).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
+    await proponLogicContract.connect(addr3).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
+    await proponLogicContract.connect(addr5).registertoOpenRFP(0, {value: ethers.utils.parseEther('0.0001')})
     // declare winners for all itemLists
     const winners = [
       owner.address, addr2.address, owner.address, 
       addr5.address, addr3.address, addr3.address,
     ]
     const rfpINDEX=0  // only 1 RFP defined so far
-    await expect( proponContract.connect(addr1).declareWinners( rfpINDEX, test_pro_pon2.id, winners))
+    await expect( proponLogicContract.connect(addr1).declareWinners( rfpINDEX, test_pro_pon2.id, winners))
     .to.be.revertedWith('enddate_not_reached_yet')
   });    
 }); 

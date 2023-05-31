@@ -221,12 +221,40 @@ const test_pro_pon3 = {
     '7a34b8d233Rf4c20o9hwOlP4AmncQ1sv39b8s9fRao0',
   ]
 
+  // Set Contest times based on current Blockchain time stamp
+// Get blockchain time stamp (block stamp). 
+// Each block here is considered a second, set openDate to 10 minutes ago,
+//  endReceiving to  blockachain +  plusEndRec and 
+// endDate to endReceiving plus plusEnd seconds. 
+// Mined those blocks to simulate that time has passed
+async function setTimes(contract, plusEndRec, plusEnd) {
+  const resl = await  contract.getBlockchainClock()
+  const blockChainClock = parseInt(resl.toString())
+  let openDate= blockChainClock - 10   // 10 seconds ago
+  let endReceiving = blockChainClock + plusEndRec // plusEndRec seconds to register 5 guests
+  let endDate= blockChainClock + plusEndRec +  plusEnd
+  return [blockChainClock, openDate, endReceiving, endDate]
+}
 
-  const createRFP = async (proponContract, address, RFPNameIdx, ContestType, ItemsList, value) => {
+  async function mineBlocks(numBlocks) {
+    for (let i = 0; i < numBlocks; i++) {
+      await ethers.provider.send("evm_mine");
+    }
+  }
+  
+  async function pause(contract, endDate) {
+    let nowTime= parseInt(await  contract.getBlockchainClock())
+    let restTime = endDate - nowTime
+    //console.log(`Blocks resting to endDate that will be mined immediately  ( ${endDate} - ${nowTime} )  = ${restTime + 1 } seconds `)
+    //console.log(`        Blocks to be mined  ${restTime +1} `)  
+    await mineBlocks(restTime +1)
+  }
+
+  const createRFP = async (proponLogicContract, address, RFPNameIdx, ContestType, ItemsList, value) => {
     let openDate=convertDatesAgo(0) - 1600 // today
     let endReceiving=convertDatesAgo(-10) // 10 days into future
     let endDate=convertDatesAgo(-11) // 9 days into future, i.e. is short 1 day that receiving dateline
-    await proponContract.connect(address).createRFP(
+    await proponLogicContract.connect(address).createRFP(
       IDRFP[RFPNameIdx],
       nameRfp[RFPNameIdx],
       rfpWebLink[RFPNameIdx],
@@ -242,25 +270,33 @@ const test_pro_pon3 = {
   async function deployProponandRFP() {
     // Get the ContractFactory and Signers here.
     const [owner, addr1, addr2, addr3, addr4, addr5,addr6] = await ethers.getSigners();
-    const propon = await ethers.getContractFactory("pro_pon");
-    const proponContract = await propon.deploy();
+    const proponData = await ethers.getContractFactory("pro_ponData");
+    const proponDataContract = await proponData.deploy();
+   
+    const proponLogic = await ethers.getContractFactory("pro_ponLogic");
+    const proponLogicContract = await proponLogic.deploy(proponDataContract.address);
+
+    await proponDataContract.setOwner(proponLogicContract.address);
+  
+    const clockTest = await ethers.getContractFactory("clockTest");
+    const clockTestContract = await clockTest.deploy();
     
     //company 1 from owner
-    let txn = await proponContract.createCompany(
+    let txn = await proponLogicContract.createCompany(
       test_pro_pon1.id,
       test_pro_pon1.name,
       test_pro_pon1.country,
       {value: ethers.utils.parseEther('0.0001')}
       )
       // company 2 from addr1
-    txn = await proponContract.connect(addr1).createCompany(
+    txn = await proponLogicContract.connect(addr1).createCompany(
       test_pro_pon2.id,
       test_pro_pon2.name,
       test_pro_pon1.country,
       {value: ethers.utils.parseEther('0.0001')}
       )      
     // company 3 from addr2
-    txn = await proponContract.connect(addr2).createCompany(
+    txn = await proponLogicContract.connect(addr2).createCompany(
       test_pro_pon3.id,
       test_pro_pon3.name,
       test_pro_pon1.country,
@@ -268,28 +304,28 @@ const test_pro_pon3 = {
       )              
     // create  rfps for each company
     //owner addr1, addr2 have both type of contest 
-    await createRFP(proponContract, owner,0,openContest,listItems1,'0.0001')
-    await createRFP(proponContract, owner,1,invitationContest,listItems2,'0.0002')
-    await createRFP(proponContract, addr1,2,openContest,listItems3,'0.0001')
-    await createRFP(proponContract, addr1,3,invitationContest,items,'0.0002')
-    await createRFP(proponContract, addr2,4,openContest,listItems2,'0.0001')
-    await createRFP(proponContract, addr2,5,invitationContest,listItems3,'0.0002')
-    return { proponContract, owner, addr1, addr2, addr3, addr4, addr5,addr6 };
+    await createRFP(proponLogicContract, owner,0,openContest,listItems1,'0.0001')
+    await createRFP(proponLogicContract, owner,1,invitationContest,listItems2,'0.0002')
+    await createRFP(proponLogicContract, addr1,2,openContest,listItems3,'0.0001')
+    await createRFP(proponLogicContract, addr1,3,invitationContest,items,'0.0002')
+    await createRFP(proponLogicContract, addr2,4,openContest,listItems2,'0.0001')
+    await createRFP(proponLogicContract, addr2,5,invitationContest,listItems3,'0.0002')
+    return { proponDataContract, proponLogicContract,  clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6};
   }  
   
 describe("********************** batchDocuments.js ********************** \nRFPs Documents", function () {
   it("1 Should allow RFP owner to add owner correct-typed documents to Open RFP", async function () {
-      const {  proponContract } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract } = await loadFixture(deployProponandRFP);
       let rfpIdx=0
       // insert requesting doc to company RFP
-      let doc= await proponContract.addDocuments(
+      let doc= await proponLogicContract.addDocuments(
         rfpIdx, 
         docTypesOnwerAllowed,
         DocumentNames,
         DocumentHashes,
         DocumentIdxs
       )
-      let documentArray = await proponContract.getDocumentsfromRFP(rfpIdx)
+      let documentArray = await proponDataContract.getDocumentsfromRFP(rfpIdx)
       let document = documentArray[3]
       expect(document.name).to.equal(DocumentNames[3]);
       document = documentArray[7]
@@ -302,9 +338,9 @@ describe("********************** batchDocuments.js ********************** \nRFPs
     });
   
 it("2 Should reject RFP owner to add an incorrect-types document to open RFP", async function () {
-      const {  proponContract } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract } = await loadFixture(deployProponandRFP);
       let rfpIdx=0
-      await expect( proponContract.addDocuments(
+      await expect( proponLogicContract.addDocuments(
         rfpIdx, 
         [IdxDocTypes['documentProposalType']],
         [DocumentNames[2]],
@@ -314,9 +350,9 @@ it("2 Should reject RFP owner to add an incorrect-types document to open RFP", a
     });
  
 it("3 Should reject RFP owner to add correct-type and incorrect-typed files to open RFP", async function () {
-      const {  proponContract } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract } = await loadFixture(deployProponandRFP);
       let rfpIdx=0
-      await expect( proponContract.addDocuments(
+      await expect( proponLogicContract.addDocuments(
         rfpIdx, 
         [IdxDocTypes['documentProposalType'], // 1st document documentRequestType valid 
         IdxDocTypes['documentProposalType']], //2nd Doc documentProposalType not
@@ -325,15 +361,15 @@ it("3 Should reject RFP owner to add correct-type and incorrect-typed files to o
         [DocumentIdxs[0],DocumentIdxs[2]]
       )).to.be.revertedWith('issuer_bad_doctype');
       // shouldn't have uploaded even first file!
-      let documents = await proponContract.getDocumentsfromRFP(rfpIdx)
+      let documents = await proponDataContract.getDocumentsfromRFP(rfpIdx)
       expect(documents.length).to.equal(0);
     });    
 
 it("4 Should allow RFP owner adding 3 correct-typed files and then reject 1 incorrect-typed files in two different callsto Open RFP", async function () {
-      const {  proponContract } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract } = await loadFixture(deployProponandRFP);
       let rfpIdx=0
       //1rst load of 2 owner files correct-typed
-      await proponContract.addDocuments(
+      await proponLogicContract.addDocuments(
         rfpIdx, 
         //  documentRequestType &  documentProposalType valids
         [IdxDocTypes['documentRequestType'],IdxDocTypes['documentQandAType']],
@@ -342,7 +378,7 @@ it("4 Should allow RFP owner adding 3 correct-typed files and then reject 1 inco
         [DocumentIdxs[0],DocumentIdxs[1]]
       )
       // 2nd upload with one correct-typed file and one wrong
-      expect (proponContract.addDocuments(
+      expect (proponLogicContract.addDocuments(
         rfpIdx, 
         //  documentRequestType valid &  documentPricingOfferingType not valid
         [IdxDocTypes['documentRequestType'],IdxDocTypes['documentPricingOfferingType']],
@@ -352,18 +388,18 @@ it("4 Should allow RFP owner adding 3 correct-typed files and then reject 1 inco
       )).to.be.revertedWith('issuer_bad_doctype');
       
       // shouldn't have uploaded in second load
-      let documents = await proponContract.getDocumentsfromRFP(rfpIdx)
+      let documents = await proponDataContract.getDocumentsfromRFP(rfpIdx)
       expect(documents.length).to.equal(2);
     });    
     
 it("5 Should allow RFP participant add  2 correct files to Open RFP", async function () {
-      const {  proponContract, addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract,  addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandRFP);
       // create RFP with Open Date major than end receiveing date
       let openDate=convertDatesAgo(0) // today 
       let endReceiving=convertDatesAgo(-3) //3 day from now
       let endDate=convertDatesAgo(-9) // 9 days from today
       // create contract with above dates to bypass time limtis added to contract
-      await proponContract.connect(addr1).createRFP(
+      await proponLogicContract.connect(addr1).createRFP(
         IDRFP[6],        // name
         nameRfp[6],   // description
         rfpWebLink[6], // RFP's web site link
@@ -376,10 +412,10 @@ it("5 Should allow RFP participant add  2 correct files to Open RFP", async func
       )
       let rfpidx=6 // 7th rfp index because we already created 6 at loadfixture function!
       //  addr1, addr3 companies register to first Open RFP of owner company
-      await proponContract.connect(addr2).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr3).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr2).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr3).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
       //1rst load of participants files correct
-      await proponContract.connect(addr3).addDocuments(
+      await proponLogicContract.connect(addr3).addDocuments(
         rfpidx, 
         //documentProposalType & documentAdministrativeType docs
         [IdxDocTypes['documentProposalType'], // 1st document documentRequestType valid 
@@ -388,18 +424,18 @@ it("5 Should allow RFP participant add  2 correct files to Open RFP", async func
         [DocumentHashes[2],DocumentHashes[5]],
         [DocumentIdxs[2],DocumentIdxs[5]]
       )
-      let documents = await proponContract.getDocumentsfromRFP(rfpidx)
+      let documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
       expect(documents[1].name).to.equal(DocumentNames[5])
       expect(documents[1].owner).to.equal(addr3.address)
     }); 
    
 it("6 Should allow RFP participants to add  2 correct-typed files, then reject 3 files in two different uploads calls to Open RFP", async function () {
-      const {  proponContract, addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
+  const {  proponDataContract, proponLogicContract,  addr1, addr2, addr3, addr4, addr5, addr6 } = await loadFixture(deployProponandRFP);
       let openDate=convertDatesAgo(0) // today 
       let endReceiving=convertDatesAgo(-1) //1 day from now
       let endDate=convertDatesAgo(-9) // 9 days from today
       // create contract with above dates to bypass time limtis added to contract
-      await proponContract.connect(addr1).createRFP(
+      await proponLogicContract.connect(addr1).createRFP(
         IDRFP[6],        // name
         nameRfp[6],   // description
         rfpWebLink[6], // RFP's web site link
@@ -412,10 +448,10 @@ it("6 Should allow RFP participants to add  2 correct-typed files, then reject 3
       )
       let rfpidx=6 // 7th rfp index because we already created 6 at loadfixture function!
       //  addr1, addr3 companies register to first Open RFP of owner company
-      await proponContract.connect(addr2).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr3).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr2).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr3).registertoOpenRFP(rfpidx,  {value: ethers.utils.parseEther('0.0001')})
       //1rst load of participants files correct
-      await proponContract.connect(addr3).addDocuments(
+      await proponLogicContract.connect(addr3).addDocuments(
         rfpidx, 
         //documentLegalType:3 & documentFinancialType:5 docs
         [IdxDocTypes['documentLegalType'], IdxDocTypes['documentAdministrativeType']], 
@@ -424,7 +460,7 @@ it("6 Should allow RFP participants to add  2 correct-typed files, then reject 3
         [DocumentIdxs[3],DocumentIdxs[6]]
       )
       // 2nd upload with one correct file and one wrong
-      expect (proponContract.connect(addr3).addDocuments(
+      expect (proponLogicContract.connect(addr3).addDocuments(
         rfpidx, 
         //documentLegalType:3 & documentQandAType:1 docs
         [IdxDocTypes['documentFinancialType'], IdxDocTypes['documentQandAType']], 
@@ -432,25 +468,25 @@ it("6 Should allow RFP participants to add  2 correct-typed files, then reject 3
         [DocumentHashes[3],DocumentHashes[1]],
         [DocumentIdxs[3],DocumentIdxs[1]]
         )).to.be.revertedWith('issuer_bad_doctype');
-        let documents = await proponContract.getDocumentsfromRFP(rfpidx)
+        let documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
     //   // shouldn't have uploaded in second load
        expect(documents.length).to.equal(2);
    })
 
 it("7 Should allow RFP owner to add  2 correct-typed documents to Invitation RFP", async function () {
     // setup test data
-    const {  proponContract, addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
+    const {  proponDataContract, proponLogicContract,  addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
     let rfpidx=1
     // insert documentRequestType &  documentProposalType valids
-    let RFP = await proponContract.getRFPbyIndex(rfpidx)
-    await proponContract.addDocuments(
+    let RFP = await proponDataContract.getRFPbyIndex(rfpidx)
+    await proponLogicContract.addDocuments(
     rfpidx, 
     [IdxDocTypes['documentRequestType'], IdxDocTypes['documentQandAType']], 
     [DocumentNames[0],DocumentNames[1]],
     [DocumentHashes[0],DocumentHashes[1]],
     [DocumentIdxs[0],DocumentIdxs[1]]
   )
-      let documents = await proponContract.getDocumentsfromRFP(rfpidx)
+      let documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
     // check that the documents were added to the RFP
     expect(documents.length).to.equal(2);
     expect(documents[0].name).to.equal(DocumentNames[0]);
@@ -463,17 +499,17 @@ it("7 Should allow RFP owner to add  2 correct-typed documents to Invitation RFP
  
 it("8 Should allow RFP owner to add 2 correct-typed documents and reject them from adding 2 wrong-typed to Invitation RFP", async function () {
       // setup test data
-      const {  proponContract, addr1, addr3 } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract,  addr1, addr3 } = await loadFixture(deployProponandRFP);
       let rfpidx=1   // owner.address company, invitation RFP
         // insert documentAmendment &  documentProposalType valids
-        await proponContract.addDocuments(
+        await proponLogicContract.addDocuments(
         rfpidx, 
         [IdxDocTypes['documentAmendment'], IdxDocTypes['documentQandAType']], 
         [DocumentNames[0],DocumentNames[1]],
         [DocumentHashes[0],DocumentHashes[1]],
         [DocumentIdxs[0],DocumentIdxs[1]]
       )
-        let documents = await proponContract.getDocumentsfromRFP(rfpidx)
+        let documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
       // check that the documents were added to the RFP
       expect(documents.length).to.equal(2);
       expect(documents[0].name).to.equal(DocumentNames[0]);
@@ -482,7 +518,7 @@ it("8 Should allow RFP owner to add 2 correct-typed documents and reject them fr
       expect(documents[1].name).to.equal(DocumentNames[1]);
       expect(documents[1].documentHash).to.equal(DocumentHashes[1]);
       expect(documents[1].idx).to.equal(DocumentIdxs[1]);
-      await expect(proponContract.addDocuments(
+      await expect(proponLogicContract.addDocuments(
         rfpidx, 
         [IdxDocTypes['documentRequestType'], IdxDocTypes['documentProposalType']], // proposaltype wrong for owner
         [DocumentNames[0],DocumentNames[1]],
@@ -493,13 +529,13 @@ it("8 Should allow RFP owner to add 2 correct-typed documents and reject them fr
 
 it("9 Should allow RFP invited participant to add 2 correct-typed documents to Invitation RFP", async function () {
     // setup test data
-    const {  proponContract, addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
+    const {  proponDataContract, proponLogicContract,  addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
     // create RFP with correct dates
     let openDate=convertDatesAgo(0) // today 
     let endReceiving=convertDatesAgo(-3) //3 day from now
     let endDate=convertDatesAgo(-9) // 9 days from today
     // create contract with above dates to bypass time limtis added to contract
-    await proponContract.connect(addr1).createRFP(
+    await proponLogicContract.connect(addr1).createRFP(
       IDRFP[6],        // name
       nameRfp[6],   // description
       rfpWebLink[6], // RFP's web site link
@@ -512,21 +548,21 @@ it("9 Should allow RFP invited participant to add 2 correct-typed documents to I
     )
     let rfpidx=6 // 7th rfp index because we already created 6 at loadfixture function!
     // invite addr1 & addr3 companies to RFP
-    await proponContract.connect(addr1).inviteCompaniestoRFP(    
+    await proponLogicContract.connect(addr1).inviteCompaniestoRFP(    
       rfpidx,
       test_pro_pon2.id,                   // Company Id of owner company
       [addr2.address, addr3.address]       // invite addr1 & addr3 companies
       )   
-  let RFP= await proponContract.getRFPbyIndex(rfpidx)
+  let RFP= await proponDataContract.getRFPbyIndex(rfpidx)
     // addr3 company to insert documentRequestType &  documentProposalType valids
-   await proponContract.connect(addr3).addDocuments(
+   await proponLogicContract.connect(addr3).addDocuments(
     rfpidx, 
     [IdxDocTypes['documentLegalType'], IdxDocTypes['documentPricingOfferingType']], 
     [DocumentNames[0],DocumentNames[1]],
     [DocumentHashes[0],DocumentHashes[1]],
     [DocumentIdxs[0],DocumentIdxs[1]]
     )
-    let documents = await proponContract.getDocumentsfromRFP(rfpidx)
+    let documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
     // check that the documents were added to the RFP
     expect(documents.length).to.equal(2);
     expect(documents[0].name).to.equal(DocumentNames[0]);
@@ -541,12 +577,12 @@ it("9 Should allow RFP invited participant to add 2 correct-typed documents to I
 
 it("10 Should allow RFP invited participant to add  2 correct-typed documents and reject 2 incorrect-typed to Invitation RFP", async function () {
  // setup test data
- const {  proponContract, addr1, addr2,  addr3 } = await loadFixture(deployProponandRFP);
+ const {  proponDataContract, proponLogicContract,  addr1, addr2,  addr3 } = await loadFixture(deployProponandRFP);
  let openDate=convertDatesAgo(0) // today 
  let endReceiving=convertDatesAgo(-10) //1 day from now
  let endDate=convertDatesAgo(-19) // 9 days from today
  // create contract with above dates to bypass time limtis added to contract
- await proponContract.connect(addr1).createRFP(
+ await proponLogicContract.connect(addr1).createRFP(
   IDRFP[6],        // name
   nameRfp[6],   // description
   rfpWebLink[6], // RFP's web site link
@@ -559,14 +595,14 @@ it("10 Should allow RFP invited participant to add  2 correct-typed documents an
  )
  let rfpidx=6 // 7th rfp index because we already created 6 at loadfixture function!
  // invite addr1 & addr3 companies to RFP
- await proponContract.connect(addr1).inviteCompaniestoRFP(    
+ await proponLogicContract.connect(addr1).inviteCompaniestoRFP(    
    rfpidx,
    test_pro_pon2.id,   // Company Id of addr1
    [addr2.address, addr3.address]       // invite addr3 company
    )   
 
  // insert correct documentLegalType &  documentPricingOfferingType valids
- await proponContract.connect(addr3).addDocuments(
+ await proponLogicContract.connect(addr3).addDocuments(
     rfpidx, 
     [IdxDocTypes['documentLegalType'], 
     IdxDocTypes['documentPricingOfferingType']], 
@@ -574,7 +610,7 @@ it("10 Should allow RFP invited participant to add  2 correct-typed documents an
     [DocumentHashes[0],DocumentHashes[1]],
     [DocumentIdxs[0],DocumentIdxs[1]]
     )
-    let documents = await proponContract.getDocumentsfromRFP(rfpidx)
+    let documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
     // check that the documents were added to the RFP
     expect(documents.length).to.equal(2);
     expect(documents[0].name).to.equal(DocumentNames[0]);
@@ -583,41 +619,41 @@ it("10 Should allow RFP invited participant to add  2 correct-typed documents an
     expect(documents[1].name).to.equal(DocumentNames[1]);
     expect(documents[1].documentHash).to.equal(DocumentHashes[1]);
     expect(documents[1].idx).to.equal(DocumentIdxs[1]);
-    documents = await proponContract.getDocumentsfromRFP(rfpidx)
+    documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
  
  // insert correct documentLegalType and incorrect documentAmendment 
-    await expect(proponContract.connect(addr3).addDocuments(
+    await expect(proponLogicContract.connect(addr3).addDocuments(
       rfpidx, 
       [IdxDocTypes['documentLegalType'], IdxDocTypes['documentAmendment']], 
       [DocumentNames[0],DocumentNames[1]],
       [DocumentHashes[0],DocumentHashes[1]],
       [DocumentIdxs[0],DocumentIdxs[1]]
       )).to.be.revertedWith('participant_bad_doctype');
-      documents = await proponContract.getDocumentsfromRFP(rfpidx)
+      documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
       expect(documents.length).to.equal(2)
 });
 
 
 it("11 Should  reject non RFP invited participant to add  2 correct-typed documents to Invitation RFP", async function () {
       // setup test data
-      const {  proponContract, addr1, addr3, addr4 } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract,  addr1, addr3, addr4 } = await loadFixture(deployProponandRFP);
       let rfpidx=1
       // invite addr1 & addr4 companies to RFP
-      await proponContract.inviteCompaniestoRFP(    
+      await proponLogicContract.inviteCompaniestoRFP(    
         rfpidx,
         test_pro_pon1.id,   // Company Id of owner
         [addr1.address, addr4.address]       // invite addr3 company
         )   
 
       // insert documentProposalType &  documentProposalType valids from non invited addr3
-      await expect(proponContract.connect(addr3).addDocuments(
+      await expect(proponLogicContract.connect(addr3).addDocuments(
       rfpidx, 
       [IdxDocTypes['documentLegalType'], IdxDocTypes['documentPricingOfferingType']], 
       [DocumentNames[0],DocumentNames[1]],
       [DocumentHashes[0],DocumentHashes[1]],
       [DocumentIdxs[0],DocumentIdxs[1]]
       )).to.be.revertedWith('not_participant');
-      let documents = await proponContract.getDocumentsfromRFP(rfpidx)
+      let documents = await proponDataContract.getDocumentsfromRFP(rfpidx)
       // check that the documents were added to the RFP
       expect(documents.length).to.equal(0);
 });
@@ -625,9 +661,9 @@ it("11 Should  reject non RFP invited participant to add  2 correct-typed docume
 
 
 it("12 Should reject non registered to Open RFP participant to add a correct-typed document", async function () {
-        const {  proponContract, addr3 } = await loadFixture(deployProponandRFP);
+        const {  proponDataContract, proponLogicContract,  addr3 } = await loadFixture(deployProponandRFP);
         let rfpidx=0 // open RFP
-        await expect(proponContract.connect(addr3).addDocuments(
+        await expect(proponLogicContract.connect(addr3).addDocuments(
           rfpidx, 
           [IdxDocTypes['documentLegalType']], 
           [DocumentNames[0]],
@@ -637,9 +673,9 @@ it("12 Should reject non registered to Open RFP participant to add a correct-typ
     });
     
 it("13 Should reject non invited to invitation RFP participant to add a correct-typed document when there are no one invited", async function () {
-        const {  proponContract, addr3 } = await loadFixture(deployProponandRFP);
+        const {  proponDataContract, proponLogicContract,  addr3 } = await loadFixture(deployProponandRFP);
         let rfpIdx=1
-        await expect( proponContract.connect(addr3).addDocuments(
+        await expect( proponLogicContract.connect(addr3).addDocuments(
           rfpIdx,
           [IdxDocTypes['documentProposalType']], 
           [DocumentNames[0]],
@@ -649,12 +685,12 @@ it("13 Should reject non invited to invitation RFP participant to add a correct-
     });
  
 it("14 Should allow RFP registered participants to  add correct-typed documents to open RFP", async function () {
-      const {  proponContract,owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
+      const {  proponDataContract, proponLogicContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
       let openDate=convertDatesAgo(0) // today 
       let endReceiving=convertDatesAgo(-10) //1 day from now
       let endDate=convertDatesAgo(-19) // 9 days from today
       // create contract with above dates to bypass time limtis added to contract
-      await proponContract.connect(addr2).createRFP(
+      await proponLogicContract.connect(addr2).createRFP(
         IDRFP[6],        // name
         nameRfp[6],   // description
         rfpWebLink[6], // RFP's web site link
@@ -666,35 +702,35 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
         {value: ethers.utils.parseEther('0.0002')}
       )
       let rfpIdx=6 // 7th rfp index because we already created 6 at loadfixture function!      
-      await proponContract.connect(owner).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr1).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr3).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(addr4).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-      await proponContract.connect(owner).addDocuments(
+      await proponLogicContract.connect(owner).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr1).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr3).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(addr4).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+      await proponLogicContract.connect(owner).addDocuments(
         rfpIdx,
         [IdxDocTypes['documentProposalType']], 
         [DocumentNames[3]],
         [DocumentHashes[3]],
         [DocumentIdxs[3]])
-      await proponContract.connect(addr1).addDocuments(
+      await proponLogicContract.connect(addr1).addDocuments(
         rfpIdx,
         [IdxDocTypes['documentProposalType']], 
         [DocumentNames[5]],
         [DocumentHashes[5]],
         [DocumentIdxs[5]])
-      await proponContract.connect(addr3).addDocuments(
+      await proponLogicContract.connect(addr3).addDocuments(
         rfpIdx,
         [IdxDocTypes['documentProposalType']], 
         [DocumentNames[6]],
         [DocumentHashes[6]],
         [DocumentIdxs[6]])                     
-      await proponContract.connect(addr4).addDocuments(
+      await proponLogicContract.connect(addr4).addDocuments(
         rfpIdx,
         [IdxDocTypes['documentProposalType']], 
         [DocumentNames[7]],
         [DocumentHashes[7]],
         [DocumentIdxs[7]])
-        let documents = await proponContract.getDocumentsfromRFP(rfpIdx)
+        let documents = await proponDataContract.getDocumentsfromRFP(rfpIdx)
         expect(documents[0].name).to.equal(DocumentNames[3])
         expect(documents[1].name).to.equal(DocumentNames[5])
         expect(documents[2].name).to.equal(DocumentNames[6])
@@ -702,12 +738,12 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
   });
 
   it("15 Should allow RFP invited participants to add correct-typed adding files to invitation only RFP", async function () {
-    const {  proponContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
+    const {  proponDataContract, proponLogicContract,  owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
     let openDate=convertDatesAgo(0) // today 
     let endReceiving=convertDatesAgo(-10) //1 day from now
     let endDate=convertDatesAgo(-19) // 9 days from today
     // create contract with above dates to bypass time limtis added to contract
-    await proponContract.connect(addr2).createRFP(
+    await proponLogicContract.connect(addr2).createRFP(
       IDRFP[6],        // name
       nameRfp[6],   // description
       rfpWebLink[6], // RFP's web site link
@@ -719,12 +755,12 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
       {value: ethers.utils.parseEther('0.0002')}
     )
     let rfpIdx=6 // 7th rfp index because we already created 6 at loadfixture function!  
-    await proponContract.connect(addr2).inviteCompaniestoRFP(
+    await proponLogicContract.connect(addr2).inviteCompaniestoRFP(
       rfpIdx,
       test_pro_pon3.id,
       [owner.address, addr1.address, addr3.address, addr4.address
     ])
-    await proponContract.connect(owner).addDocuments(
+    await proponLogicContract.connect(owner).addDocuments(
       // add 2 correct type (same type both) documents from owner company
       rfpIdx,
       [IdxDocTypes['documentProposalType'],IdxDocTypes['documentProposalType']],
@@ -732,7 +768,7 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
       [DocumentHashes[0],DocumentHashes[1]],
       [DocumentIdxs[0],DocumentIdxs[1]]
       )
-      await proponContract.connect(addr1).addDocuments(
+      await proponLogicContract.connect(addr1).addDocuments(
         rfpIdx, 
         //Add two files from documentLegalType:3 & documentFinancialType:5 docs
         [IdxDocTypes['documentLegalType'], IdxDocTypes['documentAdministrativeType']], 
@@ -740,7 +776,7 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
         [DocumentHashes[5],DocumentHashes[6]],
         [DocumentHashes[5],DocumentIdxs[6]]
         )
-        await proponContract.connect(addr3).addDocuments(
+        await proponLogicContract.connect(addr3).addDocuments(
           rfpIdx,
           //Add two files types documentPricingOfferingType & documentLegalType
           [IdxDocTypes['documentPricingOfferingType'], IdxDocTypes['documentAdministrativeType']], 
@@ -748,7 +784,7 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
           [DocumentHashes[8],DocumentHashes[7]],
           [DocumentIdxs[8],DocumentIdxs[7]]         
           )          
-    await proponContract.connect(addr4).addDocuments(
+    await proponLogicContract.connect(addr4).addDocuments(
       rfpIdx,
       //Add two files types documentFinancialType & documentProposalType
       [IdxDocTypes['documentFinancialType'], IdxDocTypes['documentProposalType']], 
@@ -756,7 +792,7 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
       [DocumentHashes[2],DocumentHashes[9]],
       [DocumentIdxs[2],DocumentIdxs[9]]
     )          
-      let documents = await proponContract.getDocumentsfromRFP(rfpIdx)
+      let documents = await proponDataContract.getDocumentsfromRFP(rfpIdx)
      // console.log('Todos los documentos (documentArray):', documents)
 
       expect(documents[0].name).to.equal(DocumentNames[0])
@@ -773,12 +809,12 @@ it("14 Should allow RFP registered participants to  add correct-typed documents 
 });  
 
 it("16 Should allow RFP participants to add correct-typed documents and RFP owner to add correct-typed documents to open RFP", async function () {
-  const {  proponContract,owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
+  const {  proponDataContract, proponLogicContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
   let openDate=convertDatesAgo(0) // today 
   let endReceiving=convertDatesAgo(-10) //1 day from now
   let endDate=convertDatesAgo(-19) // 9 days from today
   // create contract with above dates to bypass time limtis added to contract
-  await proponContract.connect(addr2).createRFP(
+  await proponLogicContract.connect(addr2).createRFP(
     IDRFP[6],        // name
     nameRfp[6],   // description
     rfpWebLink[6], // RFP's web site link
@@ -790,19 +826,19 @@ it("16 Should allow RFP participants to add correct-typed documents and RFP owne
     {value: ethers.utils.parseEther('0.0002')}
   )
   let rfpIdx=6 // 7th rfp index because we already created 6 at loadfixture function!  
-  await proponContract.connect(owner).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-  await proponContract.connect(addr1).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-  await proponContract.connect(addr3).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-  await proponContract.connect(addr4).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+  await proponLogicContract.connect(owner).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+  await proponLogicContract.connect(addr1).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+  await proponLogicContract.connect(addr3).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+  await proponLogicContract.connect(addr4).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
   // Insert participant documents
-  await proponContract.connect(addr4).addDocuments(
+  await proponLogicContract.connect(addr4).addDocuments(
     rfpIdx,
     [IdxDocTypes['documentProposalType']],
     [DocumentNames[7]],
     [DocumentHashes[7]],
     [DocumentIdxs[7]]
   )
-  await proponContract.connect(addr1).addDocuments(
+  await proponLogicContract.connect(addr1).addDocuments(
     rfpIdx,
     [IdxDocTypes['documentLegalType']],
     [DocumentNames[0]],
@@ -810,14 +846,14 @@ it("16 Should allow RFP participants to add correct-typed documents and RFP owne
     [DocumentIdxs[0]]
     )
    // Insert RFP owner Documents. 
-    await proponContract.connect(addr2).addDocuments(
+    await proponLogicContract.connect(addr2).addDocuments(
       rfpIdx,
       [IdxDocTypes['documentQandAType'],IdxDocTypes['documentQandAType']],    // same type both docs
       [DocumentNames[1],DocumentNames[2]],
       [DocumentHashes[1],DocumentHashes[2]],
       [DocumentIdxs[1],DocumentIdxs[2]]
     )    
-    let documents = await proponContract.getDocumentsfromRFP(rfpIdx)
+    let documents = await proponDataContract.getDocumentsfromRFP(rfpIdx)
     expect(documents[0].name).to.equal(DocumentNames[7])
     expect(documents[1].name).to.equal(DocumentNames[0])
     expect(documents[2].name).to.equal(DocumentNames[1])
@@ -826,12 +862,12 @@ it("16 Should allow RFP participants to add correct-typed documents and RFP owne
 });
 
 it("17 Should allow alternately RFP invited participants to add correct-typed document and RFP owner document to invitation RFP", async function () {
-  const {  proponContract,owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
+  const {  proponDataContract, proponLogicContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
   let openDate=convertDatesAgo(0) // today 
   let endReceiving=convertDatesAgo(-10) //1 day from now
   let endDate=convertDatesAgo(-19) // 9 days from today
   // create contract with above dates to bypass time limtis added to contract
-  await proponContract.connect(addr2).createRFP(
+  await proponLogicContract.connect(addr2).createRFP(
     IDRFP[6],        // name
     nameRfp[6],   // description
     rfpWebLink[6], // RFP's web site link
@@ -843,17 +879,17 @@ it("17 Should allow alternately RFP invited participants to add correct-typed do
     {value: ethers.utils.parseEther('0.0002')}
   )
   let rfpIdx=6 // 7th rfp index because we already created 6 at loadfixture function!  
-  await proponContract.connect(addr2).inviteCompaniestoRFP(rfpIdx, test_pro_pon3.id,[owner.address,addr1.address,addr3.address,
+  await proponLogicContract.connect(addr2).inviteCompaniestoRFP(rfpIdx, test_pro_pon3.id,[owner.address,addr1.address,addr3.address,
     addr4.address])
   // RFP participants docs
-  await proponContract.connect(owner).addDocuments(
+  await proponLogicContract.connect(owner).addDocuments(
     rfpIdx,
     [IdxDocTypes['documentLegalType']],
     [DocumentNames[0]],
     [DocumentHashes[0]],
     [DocumentIdxs[0]]
     )
-  await proponContract.connect(addr2).addDocuments(
+  await proponLogicContract.connect(addr2).addDocuments(
     rfpIdx,
     [IdxDocTypes['documentQandAType'],IdxDocTypes['documentQandAType']],    // same type both docs
     [DocumentNames[1],DocumentNames[2]],
@@ -861,21 +897,21 @@ it("17 Should allow alternately RFP invited participants to add correct-typed do
     [DocumentIdxs[1],DocumentIdxs[2]]
     )
     // RFP owner docs
-    await proponContract.connect(addr2).addDocuments(
+    await proponLogicContract.connect(addr2).addDocuments(
       rfpIdx,
       [IdxDocTypes['documentQandAType'],IdxDocTypes['documentQandAType']],    // same type both docs
       [DocumentNames[1],DocumentNames[2]],
       [DocumentHashes[1],DocumentHashes[2]],
       [DocumentIdxs[1],DocumentIdxs[2]]
     )      
-  await proponContract.connect(addr3).addDocuments(
+  await proponLogicContract.connect(addr3).addDocuments(
     rfpIdx,
     [IdxDocTypes['documentAdministrativeType'],IdxDocTypes['documentPricingOfferingType']],    // same type both docs
       [DocumentNames[3],DocumentNames[4]],
       [DocumentHashes[3],DocumentHashes[4]],
       [DocumentIdxs[3],DocumentIdxs[4]]
       )                      
-    let documents = await proponContract.getDocumentsfromRFP(rfpIdx)
+    let documents = await proponDataContract.getDocumentsfromRFP(rfpIdx)
     expect(documents[0].name).to.equal(DocumentNames[0])
     expect(documents[0].docType.toNumber()).to.equal(IdxDocTypes['documentLegalType'])
     expect(documents[1].name).to.equal(DocumentNames[1])
@@ -894,9 +930,9 @@ it("17 Should allow alternately RFP invited participants to add correct-typed do
 });
 
 it("18 Should reject a non RFP owner to invite companies", async function () {
-  const {  proponContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
+  const {  proponDataContract, proponLogicContract,  owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
   let rfpIdx=1  // Invitation RFP issued by owner
-  await expect(proponContract.connect(addr2).inviteCompaniestoRFP(  // inviting from non RFP owing company add2
+  await expect(proponLogicContract.connect(addr2).inviteCompaniestoRFP(  // inviting from non RFP owing company add2
     rfpIdx,
     test_pro_pon3.id,
     [owner.address, addr1.address,  addr4.address])) // addr3 company not invited    
@@ -904,14 +940,14 @@ it("18 Should reject a non RFP owner to invite companies", async function () {
 });
 
 it("19 Should reject non invited to invitation RFP participant to add a correct-typed document when there are others invited", async function () {
-  const {  proponContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
+  const {  proponDataContract, proponLogicContract,  owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
   let rfpIdx=5
-  await proponContract.connect(addr2).inviteCompaniestoRFP(
+  await proponLogicContract.connect(addr2).inviteCompaniestoRFP(
     rfpIdx,
     test_pro_pon3.id,
     [owner.address, addr1.address,  addr4.address] // addr3 company not invited
     )
-  await expect( proponContract.connect(addr3).addDocuments(
+  await expect( proponLogicContract.connect(addr3).addDocuments(
     rfpIdx,
     [IdxDocTypes['documentProposalType']], 
     [DocumentNames[0]],
@@ -922,13 +958,13 @@ it("19 Should reject non invited to invitation RFP participant to add a correct-
 
 it("20 Should reject RFP invited participant to add correct-typed documents to Invitation RFP when receving date is reached", async function () {
   // setup test data
-  const {  proponContract, addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
+  const {  proponDataContract, proponLogicContract, clockTestContract, addr1, addr2, addr3 } = await loadFixture(deployProponandRFP);
   // create RFP with correct dates
-  let openDate=convertDatesAgo(0) - (20 * 60) // now
-  let endReceiving=convertDatesAgo(0) - (10 * 60) // 
-  let endDate=convertDatesAgo(-9) // 9 days from today
+
+  const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+  
   // create contract with above dates to bypass time limtis added to contract
-  await proponContract.connect(addr1).createRFP(
+  await proponLogicContract.connect(addr1).createRFP(
     IDRFP[6],        // name
     nameRfp[6],   // description
     rfpWebLink[6], // RFP's web site link
@@ -941,32 +977,31 @@ it("20 Should reject RFP invited participant to add correct-typed documents to I
   )
   let rfpidx=6 // 7th rfp index because we already created 6 at loadfixture function!
   // invite addr1 & addr3 companies to RFP
-  await proponContract.connect(addr1).inviteCompaniestoRFP(    
+  await proponLogicContract.connect(addr1).inviteCompaniestoRFP(    
     rfpidx,
     test_pro_pon2.id,                   // Company Id of owner company
     [addr2.address, addr3.address]       // invite addr1 & addr3 companies
     )   
-  // addr3 company to insert documentRequestType &  documentProposalType valids
- await expect(proponContract.connect(addr3).addDocuments(
-  rfpidx, 
-  [IdxDocTypes['documentLegalType'], IdxDocTypes['documentPricingOfferingType']], 
-  [DocumentNames[0],DocumentNames[1]],
-  [DocumentHashes[0],DocumentHashes[1]],
-  [DocumentIdxs[0],DocumentIdxs[1]]
-  )).to.be.revertedWith('end_receiving_reached')
+    // addr3 company to insert documentRequestType &  documentProposalType valids
+    await pause(clockTestContract, endReceiving)  // mined  untilendReceiving + 1 is reached rendering out of time document bidder addition
+    await expect(proponLogicContract.connect(addr3).addDocuments(
+   rfpidx, 
+   [IdxDocTypes['documentLegalType'], IdxDocTypes['documentPricingOfferingType']], 
+   [DocumentNames[0],DocumentNames[1]],
+   [DocumentHashes[0],DocumentHashes[1]],
+   [DocumentIdxs[0],DocumentIdxs[1]]
+   )).to.be.revertedWith('end_receiving_reached')
 });
 
 it("21 Should reject RFP OPEN registered participant to add correct-typed documents  when receving date has been reached", async function () {
   // setup test data
-  const {  proponContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
+  const {  proponDataContract, proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4 } = await loadFixture(deployProponandRFP);
   // create RFP with correct dates
   
-  let openDate=convertDatesAgo(0) - (20 * 60) // today
-  let endReceiving=convertDatesAgo(0) - (10 * 60)
-  let endDate=convertDatesAgo(-11) // 9 days into future, i.e. is short 1 day that receiving dateline
+  const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 24, 2)
 
   // create contract with above dates to bypass time limtis added to contract
-  await proponContract.connect(addr1).createRFP(
+  await proponLogicContract.connect(addr1).createRFP(
     IDRFP[6],        // name
     nameRfp[6],   // description
     rfpWebLink[6], // RFP's web site link
@@ -979,12 +1014,13 @@ it("21 Should reject RFP OPEN registered participant to add correct-typed docume
   )
   let rfpIdx=6 // 7th rfp index because we already created 6 at loadfixture function!
   // invite addr1 & addr3 companies to RFP
-  await proponContract.connect(owner).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-  await proponContract.connect(addr2).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-  await proponContract.connect(addr3).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
-  await proponContract.connect(addr4).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')}) 
+  await proponLogicContract.connect(owner).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+  await proponLogicContract.connect(addr2).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+  await proponLogicContract.connect(addr3).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')})
+  await proponLogicContract.connect(addr4).registertoOpenRFP(rfpIdx,  {value: ethers.utils.parseEther('0.0001')}) 
   // addr3 company to insert documentRequestType &  documentProposalType valids
- await expect(proponContract.connect(addr3).addDocuments(
+  await pause(clockTestContract, endReceiving) 
+  await expect(proponLogicContract.connect(addr3).addDocuments(
   rfpIdx, 
   [IdxDocTypes['documentLegalType'], IdxDocTypes['documentPricingOfferingType']], 
   [DocumentNames[0],DocumentNames[1]],

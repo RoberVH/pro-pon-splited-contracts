@@ -99,24 +99,17 @@ constructor(address _dataContractAddress) payable {
         return hash;
     }
 
-    // winnerIsParticipating
+    // winnerIsParticipatingorZero
     //       check if the passed address is also present in array targetAddreses
     //       A 0 address is also checked as this is considered a 'deserted' item
-    function winnerIsParticipating(address addresstoCheck, address[] memory targetAddresses ) private pure returns (bool) {
+    function winnerIsParticipatingorZero(address addresstoCheck, address[] memory targetAddresses ) private pure returns (bool) { 
+        if (targetAddresses.length == 0) { // there is not participants, onvly valid winner is address(0) (this is: deserted)
+            return (addresstoCheck==address(0));
+        }
         for (uint i=0; i<targetAddresses.length;i++)  
-            if (addresstoCheck == targetAddresses[i] || addresstoCheck==address(0)) return true;  // account for deserted Items
+                if (addresstoCheck == targetAddresses[i] || addresstoCheck==address(0)) return true;  // account for deserted Items
         return false;
     }
-
-// // check if and address (tocheck) is contained in an address array (container)
-//     function isContainedAddress(address[] memory container, address tocheck) public pure returns (bool) {
-//     for (uint i = 0; i < container.length; i++) {
-//         if (container[i] == tocheck) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
 
 
     // Company functions ************************************************************
@@ -175,12 +168,9 @@ constructor(address _dataContractAddress) payable {
         require(bytes(chekString).length!=0,'address_not_admin'); // this address is not admin
         // Next sentence that was disable for developing and testing is 
         require(_openDate >= (block.timestamp - 3600),'opendate_behind_today'); // allow one hour behind!
-        // console.log('time:', block.timestamp);
-        // console.log('_openDate:', _openDate);
 
         require(_openDate < _endReceivingDate, 'initial_date_wrong');
         require(_endReceivingDate < _endDate, 'receiving_date_wrong');
-        //uint currRFPIdx = getcurrentRFPIdx(); // global RFP Index
         uint currRFPIdx = dataContract.getcurrentRFPIdx();
         RFP memory newRFP= RFP(
                 _name,          // in UI/UX is the Id of RFP
@@ -252,7 +242,6 @@ constructor(address _dataContractAddress) payable {
         require(msg.value>=dataContract.REGISTER_OPEN_RFP_PRICE(),'Insufficient_payment_fee');
         //disable
         require(rfp.contestType==ContestType.OPEN, 'not_open_tender');
-        //console.log('Blockchain datastamp:', block.timestamp);
        require(rfp.endReceivingDate > block.timestamp,'end_receiving_reached');
         require(msg.sender!= rfp.issuer,'can_not_register_self');
         require(rfp.participants.length  < dataContract.MAX_GUEST_OPEN_TENDER(),'max_participants_reached');
@@ -333,24 +322,22 @@ constructor(address _dataContractAddress) payable {
     {
         // first check conditions are met
         RFP memory rfp = dataContract.getRFP(_rfpIndex);
+
+        
         require(rfp.winners.length == 0, 'rfp_already_awarded'); // Awarding only once is allowed
         require(!rfp.canceled, 'already_canceled');        
-        //require(RFPs[_rfpIndex].winners.length==0,'rfp_already_awarded'); // awarding only once is allowed
-        //require(!RFPs[_rfpIndex].canceled, 'already_canceled');
-        uint itemsLength=rfp.items.length;
+         uint itemsLength=rfp.items.length;
         uint256 winnersLength = winners.length;
-        //uint itemsLength=RFPs[_rfpIndex].items.length;
         require(
                 (itemsLength == 0 || itemsLength == 1) && winners.length == 1 ||
                 itemsLength >= 2 && winnersLength == itemsLength,
                 "not_matching_winners"
             );                    
         require(block.timestamp >= rfp.endDate, 'enddate_not_reached_yet');
-        //address[] memory uniqueWinners=new address[](0);
         for (uint i=0; i < winnersLength; i++) {
             address winner=winners[i];
             require(winner!=msg.sender,'cannot_self_award');
-            require(winnerIsParticipating(winner, rfp.participants),'invalid_winner');
+            require(winnerIsParticipatingorZero(winner, rfp.participants),'invalid_winner');
             if (!uniqueAddress[winner] ) {
                 uniqueAddress[winner]=true;
                 if(winner!=address(0)) {

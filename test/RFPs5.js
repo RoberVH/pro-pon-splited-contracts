@@ -5,7 +5,6 @@
  */
 
 const { expect } = require("chai");
-//const { describe, it } = require("mocha")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 // Test for creating RFP for Pro-pon 0.2.0
@@ -60,6 +59,12 @@ function printTimes(blockChainClock,openDate, endReceiving,endDate) {
   console.log('endDate= blockChainClock',endDate)
 }
 
+// Set Contest times based on current Blockchain time stamp
+// Get blockchain time stamp (block stamp). 
+// Each block here is considered a second, set openDate to 10 minutes ago,
+//  endReceiving to  blockachain +  plusEndRec and 
+// endDate to endReceiving plus plusEnd seconds. 
+// Mined those blocks to simulate that time has passed
 async function setTimes(contract, plusEndRec, plusEnd) {
   const resl = await  contract.getBlockchainClock()
   const blockChainClock = parseInt(resl.toString())
@@ -240,8 +245,8 @@ const createRFP = async (
 async function pauseMumbia(contract, endDate) {
   let nowTime= parseInt(await  contract.getBlockchainClock())
   let restTime = endDate - nowTime
-  console.log(` Entering pause of  ( ${endDate} - ${nowTime} )  = ${restTime} seconds `)
-  console.log(`        Pause of ${restTime} seconds `)  
+  // console.log(` Entering pause of  ( ${endDate} - ${nowTime} )  = ${restTime} seconds `)
+  // console.log(`        Pause of ${restTime} seconds `)  
   await mineBlocks(restTime +1)
   return new Promise((resolve) => {
     setTimeout(resolve, restTime * 1000);
@@ -255,25 +260,16 @@ async function pause(contract, endDate) {
   // console.log(`Blocks resting to endDate that will be mined immediately  ( ${endDate} - ${nowTime} )  = ${restTime + 1 } seconds `)
   // console.log(`        Blocks to be mined  ${restTime +1} `)  
   await mineBlocks(restTime +1)
-
 }
 
 async function deployProponandCreateCompanies() {
   // Get the ContractFactory and Signers here.
-  const [owner, addr1, addr2, addr3, addr4, addr5, addr6] =
-    await ethers.getSigners();
+  const [owner, addr1, addr2, addr3, addr4, addr5, addr6] =    await ethers.getSigners();
   const proponData = await ethers.getContractFactory("pro_ponData");
   const proponDataContract = await proponData.deploy();
-  // console.log('proponDataContract',proponDataContract.address)
-  // console.log('owner of proponDataContract', await proponDataContract.getOwner());
-
+ 
   const proponLogic = await ethers.getContractFactory("pro_ponLogic");
-  const proponLogicContract = await proponLogic.deploy(
-    proponDataContract.address
-  );
-
-  // console.log('proponLogicContract', proponLogicContract.address)
-  // console.log('Setting Datacontract owner')
+  const proponLogicContract = await proponLogic.deploy(proponDataContract.address);
   await proponDataContract.setOwner(proponLogicContract.address);
 
   const clockTest = await ethers.getContractFactory("clockTest");
@@ -346,18 +342,7 @@ async function deployProponandCreateCompanies() {
       { value: ethers.utils.parseEther("0.0001") }
     );
 
-  return {
-    proponDataContract,
-    proponLogicContract, 
-    clockTestContract,
-    owner,
-    addr1,
-    addr2,
-    addr3,
-    addr4,
-    addr5,
-    addr6,
-  };
+    return { proponDataContract, proponLogicContract,  clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6};
 }
 
 describe("***********************************RFP5.js ********************************************\n   Validate dates when creating RFPs", function () {
@@ -408,9 +393,10 @@ describe("***********************************RFP5.js ***************************
       addr6,
     } = await loadFixture(deployProponandCreateCompanies);
     // create RFP with end receiving Date major than end end Date
-    let openDate = convertDatesAgo(0); // today
-    let endReceiving = convertDatesAgo(-10); // 10 days into future
-    let endDate = convertDatesAgo(-9); // 9 days into future, i.e. is short 1 day that receiving dateline
+     let openDate = convertDatesAgo(0); // today
+     let endReceiving = convertDatesAgo(-10); // 10 days into future
+     let endDate = convertDatesAgo(-9); // 9 days into future, i.e. is short 1 day that receiving dateline
+
 
     // console.log('openDate',openDate)
     // console.log('openDate hora local', convertUnixToDate(openDate))
@@ -443,10 +429,11 @@ describe("***********************************RFP5.js ***************************
       addr6,
     } = await loadFixture(deployProponandCreateCompanies);
     // create RFP with Open Date major than end receiveing date
-    let openDate = convertDatesAgo(0); // today
-    let endReceiving = convertDatesAgo(0); // today
-    let endDate = convertDatesAgo(-9); // 9 days into future, i.e. is short 1 day that receiving dateline
+     let openDate = convertDatesAgo(0); // today
+     let endReceiving = convertDatesAgo(0); // today
+     let endDate = convertDatesAgo(-9); // 9 days into future, i.e. is short 1 day that receiving dateline
 
+    
     await expect(
       proponLogicContract.connect(addr1).createRFP(
         IDRFP[0], // name
@@ -669,10 +656,12 @@ describe("Validate declaring winners of  RFPs **********************************
     //let endDate = convertDatesAgo(0) + (12 + 3)   // 12  offset seconds + 6 slack for registering
     
     const resl = await  clockTestContract.getBlockchainClock()
-    const blockChainClock = parseInt(resl.toString())
-    let openDate= blockChainClock - 10   // 10 seconds ago
-    let endReceiving = blockChainClock + 8  // 8 seconds to register 5 guests
-    let endDate= blockChainClock + 9  // 7 seconds has to pass to be able to declare winners
+   // const blockChainClock = parseInt(resl.toString())
+    //let openDate= blockChainClock - 10   // 10 seconds ago
+    //let endReceiving = blockChainClock + 8  // 8 seconds to register 5 guests
+    //let endDate= blockChainClock + 9  // 7 seconds has to pass to be able to declare winners
+
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
 
     // console.log('blockChainClock', blockChainClock)
     // console.log('openDate',openDate)
@@ -709,10 +698,6 @@ describe("Validate declaring winners of  RFPs **********************************
       .connect(addr5)
       .registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
       
-//       let nowTime= parseInt(await  clockTestContract.getBlockchainClock())
-//       let restTime = endDate - nowTime
-// //      console.log(`Entering pause of  ( ${endDate} - ${nowTime} )  = ${restTime} seconds `)
-//       console.log(`        Pause of ${restTime} seconds `)
 
       await pause(clockTestContract, endDate);
       
@@ -923,7 +908,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endDate = convertDatesAgo(0) - (5*60)  // 5 minutes ago
 
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 6, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 26, 2)
 
 
     // create a correct Open RFP
@@ -1098,7 +1083,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let   endReceiving = blockChainClock + 12  //  seconds for invitations/ registering / adding docs etc
     // let   endDate= blockChainClock + 16  //  seconds has to pass to be able to declare winners
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 16, 2) // 16
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 26, 2) // 16
     //printTimes(blockChainClock, openDate, endReceiving, endDate)
     // create RFPs
     await createRFP(
@@ -1206,7 +1191,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(0) - (15*60)  // 15 minutes ago
     // let endDate = convertDatesAgo(0) - (5*60)  // 5 minutes ago
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 18, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
     //printTimes(blockChainClock, openDate, endReceiving, endDate)
 
     // create a correct Open RFP
@@ -1273,7 +1258,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(-5) // In five days 
     // let endDate = convertDatesAgo(-10)  // In ten days
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 12, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
     //printTimes(blockChainClock, openDate, endReceiving, endDate)
 
     // create a correct Open RFP
@@ -1353,7 +1338,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(-5) // In five days 
     // let endDate = convertDatesAgo(-10)  // In ten days
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 10, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
 //    printTimes(blockChainClock, openDate, endReceiving, endDate)
 
     // create a correct Open RFP
@@ -1490,7 +1475,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(-5) // In five days 
     // let endDate = convertDatesAgo(-10)  // In ten days
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 16, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 26, 2)
 
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
@@ -1552,7 +1537,7 @@ describe("Validate declaring winners of  RFPs **********************************
     //let openDate=convertDatesAgo(0)   // now
     //let endReceiving = convertDatesAgo(-5) // In five days 
     //let endDate = convertDatesAgo(-10)  // In ten days
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 10, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 22, 2)
 
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
@@ -1598,7 +1583,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let openDate=convertDatesAgo(0)   // now
     // let endReceiving = convertDatesAgo(-5) // In five days 
     // let endDate = convertDatesAgo(-10)  // In ten days
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 14, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 24, 2)
 
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
@@ -1683,7 +1668,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(-5) // In five days 
     // let endDate = convertDatesAgo(-10)  // In ten days
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 12, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 22, 2)
 
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
@@ -1730,7 +1715,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let openDate=convertDatesAgo(0)   // now
     // let endReceiving = convertDatesAgo(-5) // In five days 
     // let endDate = convertDatesAgo(-10)  // In ten days
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 16, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 26, 2)
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
       IDRFP[0], // name
@@ -1893,7 +1878,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(-2);
     // let endDate = convertDatesAgo(-4);
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 16, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 26, 2)
 
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
@@ -1953,7 +1938,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(-2);
     // let endDate = convertDatesAgo(-3);
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 14, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 24, 2)
 
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
@@ -2041,7 +2026,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // let endReceiving = convertDatesAgo(-5) // In five days 
     // let endDate = convertDatesAgo(-10)  // In ten days
 
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 16, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 26, 2)
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
       IDRFP[0], // Id
@@ -2358,7 +2343,7 @@ describe("Validate declaring winners of  RFPs **********************************
     // expect(winners[0]).to.equal(winnerRetrieved[0])
   });
 
-  it("27 Should record cancelling time of a cancelled  1 item OPEN RFP", async function () {
+  it("27 Should record cancelling Datetime of a cancelled 1 item OPEN RFP", async function () {
     const {
       proponDataContract,
       proponLogicContract,
@@ -2530,6 +2515,178 @@ describe("Validate declaring winners of  RFPs **********************************
         })
     ).to.be.revertedWith("already_canceled");
   });
+
+  it("30 Should acept declaring desert a no-item Contest when there are no Bidders", async function () {
+    const {
+      proponDataContract,
+      proponLogicContract,
+      clockTestContract,
+      owner,
+      addr1,
+      addr2,
+      addr3,
+      addr4,
+      addr5,
+      addr6,
+    } = await loadFixture(deployProponandCreateCompanies);
+    //let openDate=convertDatesAgo(0)   // now
+    //let endReceiving = convertDatesAgo(-5) // In five days 
+    //let endDate = convertDatesAgo(-10)  // In ten days
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+    // create RFPs
+    const rfpINDEX = 0  // 1rst contest
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.OPEN,
+      [], // no items
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+    
+    // no one registered
+  
+    await pause(clockTestContract, endDate)
+    // declare winners for all itemLists
+    const winners = [ethers.constants.AddressZero]; // Address 0x to declare deserted
+    await proponLogicContract
+      .connect(addr1)
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winners);
+    const winnerRetrieved = await proponDataContract.getWinners(rfpINDEX);
+    expect(winners[0]).to.equal(winnerRetrieved[0]);
+  });
+
+  it("31 Should accept declaring desert a one-item Contest when there are no Bidders", async function () {
+    const {proponDataContract ,proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6
+          } = await loadFixture(deployProponandCreateCompanies);
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+    // create RFPs
+    const rfpINDEX = 0  // 1rst contest
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.OPEN,
+      [], // no items
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+      
+    await pause(clockTestContract, endDate)
+    // declare winners for all itemLists
+    const winners = [ethers.constants.AddressZero]; // Address 0x to declare deserted
+    await proponLogicContract
+      .connect(addr1)
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winners);
+    const winnerRetrieved = await proponDataContract.getWinners(rfpINDEX);
+    expect(winners[0]).to.equal(winnerRetrieved[0]);
+  });
+
+  it("32 Should accept declaring desert a multi-item Contest when there are no Bidders", async function () {
+    const {proponDataContract ,proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6
+          } = await loadFixture(deployProponandCreateCompanies);
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+    // create RFPs
+    const rfpINDEX = 0  // 1rst contest
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.OPEN,
+      listItems3, // no items
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+    await pause(clockTestContract, endDate)
+    const winners = [ethers.constants.AddressZero,ethers.constants.AddressZero,ethers.constants.AddressZero,ethers.constants.AddressZero,ethers.constants.AddressZero]; // Address 0x to declare deserted
+    await proponLogicContract
+      .connect(addr1)
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winners);
+    const winnerRetrieved = await proponDataContract.getWinners(rfpINDEX);
+    expect(winners[0]).to.equal(winnerRetrieved[0]);
+  });
+
+  it("33 Should reject declaring winners a no-item Contest when there are no Bidders", async function () {
+    const {proponDataContract ,proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6
+          } = await loadFixture(deployProponandCreateCompanies);
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+    // create RFPs
+    const rfpINDEX = 0  // 1rst contest
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.OPEN,
+      [], // no items
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+    await pause(clockTestContract, endDate)
+    const winners = [addr2.address]; // Address 0x to declare deserted
+    expect( proponLogicContract
+      .connect(addr1)
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winners))
+      .to.be.revertedWith('invalid_winner')
+  });
+
+  it("34 Should reject declaring winners a one-item Contest when there are no Bidders", async function () {
+    const {proponDataContract ,proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6
+          } = await loadFixture(deployProponandCreateCompanies);
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+    // create RFPs
+    const rfpINDEX = 0  // 1rst contest
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.OPEN,
+      ['item1'], // no items
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+    await pause(clockTestContract, endDate)
+    const winners = [addr2.address]; // Address 0x to declare deserted
+    expect( proponLogicContract
+      .connect(addr1)
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winners))
+      .to.be.revertedWith('invalid_winner')
+  });
+
+  it("35 Should reject declaring winners a multiple-item Contest when there are no Bidders", async function () {
+    const {proponDataContract ,proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6
+          } = await loadFixture(deployProponandCreateCompanies);
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+    // create RFPs
+    const rfpINDEX = 0  // 1rst contest
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.OPEN,
+      listItems3, 
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+    await pause(clockTestContract, endDate)
+    const winners = [addr2.address, addr3.address, addr5.address, addr5.address, addr6.address]; // Address 0x to declare deserted
+    expect( proponLogicContract
+      .connect(addr1)
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winners))
+      .to.be.revertedWith('invalid_winner')
+  });
 });
 
 describe("Validate winners are accounted of on own record **********************************************************************", function () {
@@ -2549,7 +2706,7 @@ describe("Validate winners are accounted of on own record **********************
     //let openDate=convertDatesAgo(0) - (30*60)  
     //let endReceiving = convertDatesAgo(0) - (15*60)
     //let endDate = convertDatesAgo(0) - (10*60)
-    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
       IDRFP[0], // name
@@ -2603,7 +2760,7 @@ describe("Validate winners are accounted of on own record **********************
 //    let openDate=convertDatesAgo(0)   // now
 //    let endReceiving = convertDatesAgo(-5) // In five days 
 //    let endDate = convertDatesAgo(0) - 10 * 60;
-const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 20, 2)
+const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(
       IDRFP[0], // name
@@ -2998,3 +3155,7 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
     expect(companyRFPsNumbers).deep.equal([]);
   });
 });
+
+
+
+

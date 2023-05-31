@@ -1,3 +1,6 @@
+/**
+ * Test pro_ponData and pro_ponLogic Company, Constants & Value functions contracts
+ */
 const { expect } = require("chai")
 const { describe, it } = require("mocha")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
