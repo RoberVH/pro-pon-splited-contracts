@@ -6,29 +6,33 @@ const main = async () => {
     console.log("Deploying contracts with the account:", deployer.address);
     
     // 1. Deploy ProPonData contract
-    const ProPonData = await ethers.getContractFactory("pro_ponData");
-    const proPonData = await ProPonData.deploy();
-    await proPonData.deployed();
-    console.log("ProPonData deployed to:", proPonData.address);
+    const ProPonDataFactory = await ethers.getContractFactory("pro_ponData");
+    const proPonDataContract = await ProPonDataFactory.deploy();
+    await proPonDataContract.deployed();
+    console.log("ProPon_Data deployed to:", proPonDataContract.address);
+    console.log("----------------------------------------------------");
 
      // 2. Deploy ProPonLogic contract
-    const ProPonLogic = await ethers.getContractFactory("pro_ponLogic");
-    const proPonLogic = await ProPonLogic.deploy(proPonData.address);
-    await proPonLogic.deployed();
-    console.log("ProPonLogic deployed to:", proPonLogic.address);
+    const ProPonLogicFactory = await ethers.getContractFactory("pro_ponLogic");
+    const proPonLogicContract = await ProPonLogicFactory.deploy(proPonDataContract.address);
+    await proPonLogicContract.deployed();
+    console.log("ProPon_Logic deployed to:", proPonLogicContract.address);
+    console.log("----------------------------------------------------");
+
 
     // 3. Transfer ownership of ProPonData contract to ProPonLogic contract
-    await proPonData.setOwner(proPonLogic.address);
-    console.log("Ownership of ProPonData transferred to ProPonLogic");
+    await proPonDataContract.setOwner(proPonLogicContract.address);
+    console.log("Ownership of ProPon_Data transferred to ProPon_Logic");
+    console.log("----------------------------------------------------");
 
-
-    console.log("Account balance:", (await deployer.getBalance()).toString());    
-    const proponContractFactory = await ethers.getContractFactory('pro_pon');
-    const proponContract = await proponContractFactory.deploy();
-    await proponContract.deployed();
-    console.log("Contract deployed to:", proponContract.address);
+    const owner = await proPonDataContract.getOwner()
+    const manager = await proPonDataContract.getManager()
+    console.log("Propon_Data Owner:", owner)
+    console.log("Propon_Data Manager:", manager)
+    console.log("----------------------------------------------------");
 };
-  
+
+
 const runMain = async () => {
   try {
     await main();

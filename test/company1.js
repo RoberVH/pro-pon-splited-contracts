@@ -393,7 +393,6 @@ describe("Test setting/getting prices on Manager Contract", function () {
     companyPrice = await proponDataContract.CREATE_OPEN_RFP_PRICE()
     const precioMatic= ethers.utils.formatUnits(companyPrice,"ether")
     expect(parseFloat(precioMatic)).to.equal(price)
-    console.log('4. precio:',parseFloat(precioMatic))
   });
 
   it("6 Should allow owner set maxguest to open and invitation contests", async function () {

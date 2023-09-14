@@ -1,7 +1,7 @@
 // Scripts to recover matics from contracts and destroy contracts   at mumbai
 const { ethers } = require("hardhat");
 
-const address = '0x2F9A4aDCc776019cd3A510E79827c118e420d74c'    // deployed on may  6 
+const address = '0x2F9A4aDCc776019cd3A510E79827c118e420d74c'    // deployed on may  6, 2023 
 
 const  jsoncontract = require('../artifacts/contracts/pro-pon.sol/pro_pon.json')   
 

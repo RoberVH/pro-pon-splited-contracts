@@ -5,7 +5,7 @@ const  jsoncontract = require('../artifacts/contracts/pro-pon.sol/pro_pon.json')
 const main = async () => {
     //const pro_ponContractFactory = await ethers.getContractFactory('pro_pon');
     //pro_ponContractFactory.attach('0xd3d851bA386FdAD02BF1DcE2BcF0108eF74C20ce')
-    const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  'dxp8tOWZTcrkZxLZGWD3NRjrDHkcLLA6'  )
+    const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE  )
     const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
     const pro_ponContract = new ethers.Contract('0xd3d851bA386FdAD02BF1DcE2BcF0108eF74C20ce', jsoncontract.abi , signer);
     //const pro_ponContract = await pro_ponContractFactory.deploy();

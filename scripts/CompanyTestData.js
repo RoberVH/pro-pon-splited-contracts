@@ -90,5 +90,54 @@ const Companies = [
       "country": "BRA"
       },   
       
+      { "accountName": "Propon.me-Admin",
+      "accountNumber": "0x8cb7D66b79dc501CF8879b290B77361E24aC7177",
+      "description": "DEA160412UV0",
+      "companyName": "Desarrollo Arquitectonico Muriel & Asociados, S.A. de C.V.",
+      "contactPerson": "Bernardo Jiménez",
+      "email": "proyectos@prodigy.com.mx",
+      "website": "",
+      "country": "MEX"
+      },   
+      
+      { "accountName": "Propon-Admin",
+      "accountNumber": "0x4D4adEC22376cC3D2dB900314152f688a0b406E2",
+      "description": "41.708.273/0301-17",
+      "companyName": "Dasein Alumínios",
+      "contactPerson": "Luciana Morais-Campinha",
+      "email": "luciana-morais@daseinaluminios.com.br",
+      "website": "www.daseinaluminios.com.br",
+      "country": "BRA"
+      },   
+
+      { "accountName": "Propon/Admin",
+      "accountNumber": "0x85a8B8404063B60119F42a4113Bec56C27505C48",
+      "description": "COS190312M12",
+      "companyName": "Coordinadora de Servicios de Logística S.A.",
+      "contactPerson": "Rocío Castellanos",
+      "email": "buzon@coordinadoraserv.com.mx",
+      "website": "www.coordinadoraserv.com.mx",
+      "country": "MEX"
+      },         
+
+      { "accountName": "chrome-1",
+      "accountNumber": "0x15635D4bE6c1b666591b387a40227398dE16CAad",
+      "description": "21.509.400/0001-41",
+      "companyName": "Agrale do Sul S.A.",
+      "contactPerson": "Margarida Gomes",
+      "email": "mgomez@agraledosul.br",
+      "website": "www.agraledosul.br",
+      "country": "BRA"
+      },         
+      
+      { "accountName": "Coinbase-1", // en win azure chrome
+      "accountNumber": "0x9BE1c0822bd376d1DA8c0289a7f98bC998d8099C",
+      "description": "193-470032-825",
+      "companyName": "Jeffrey Blacksmith.",
+      "contactPerson": "Jeffrey Blacksmith",
+      "email": "jeffrey1987@yahoo.com",
+      "website": "",
+      "country": "USA"
+      },         
     ]
     // Brazil Tax Code : 'Cadastro Nacional da Pessoa Jurídica'

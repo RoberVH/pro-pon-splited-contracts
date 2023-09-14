@@ -7,7 +7,7 @@ const main = async () => {
 
    //const pro_ponContractFactory = await ethers.getContractFactory('pro_pon');
     //pro_ponContractFactory.attach('0xd3d851bA386FdAD02BF1DcE2BcF0108eF74C20ce')
-    const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  'dxp8tOWZTcrkZxLZGWD3NRjrDHkcLLA6'  )
+    const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE  )
     const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
     const proponContract = new ethers.Contract('0xBB9bac7E25B1739c090B823078F9e5a390AE2a91', jsoncontract.abi , signer);
     //const pro_ponContract = await pro_ponContractFactory.deploy();

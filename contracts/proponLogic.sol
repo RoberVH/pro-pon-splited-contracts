@@ -53,7 +53,6 @@ constructor(address _dataContractAddress) payable {
     // validates the RFP was actually issued by whomever sender is trying to modify RFP 
     modifier onlyIssuer(uint rfpIdx) {
         require(dataContract.getRFPIssuer(rfpIdx) == msg.sender, 'Only_issuer_can_perform');
-
         _;
     }
 
@@ -61,10 +60,6 @@ constructor(address _dataContractAddress) payable {
         require(!dataContract.isRFPCanceled(rfpIdx), 'already_canceled');
         _;
     }
-
-    // function isOwner() public view returns (bool) {
-    //     return msg.sender == owner;
-    // }
 
     // retire funds to owner account
     function withdraw() public onlyOwner {
@@ -75,15 +70,14 @@ constructor(address _dataContractAddress) payable {
 
     // Getter/setters ***************************************************************
 
- // Variables of capacity and price
+    // Variables of capacity and price
     function setOwner(address _newOwner) external onlyOwner {
         owner=_newOwner;
     }
-
  
     // utility functions ***************************************************************
     function equals(string memory a, string memory b) private pure returns (bool) {
-    if(bytes(a).length != bytes(b).length) {
+    if (bytes(a).length != bytes(b).length) {
             return false;
         } else {
             return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
@@ -91,7 +85,7 @@ constructor(address _dataContractAddress) payable {
     }
 
     // concatStringAndAddress
-    //          - Concatenate a string and an address, hash the concatenated result and create a mapping to a bool
+    //        - Concatenate a string and an address, hash the concatenated result and create a mapping to a bool
     function concatStringAndAddress(string memory _string, address _address) private pure returns (bytes32){
         bytes32  stringhashed = keccak256(bytes(_string));
         bytes memory concatString = abi.encodePacked(stringhashed, _address);
@@ -111,7 +105,6 @@ constructor(address _dataContractAddress) payable {
         return false;
     }
 
-
     // Company functions ************************************************************
     function createCompany(
         string memory _id,
@@ -123,8 +116,6 @@ constructor(address _dataContractAddress) payable {
        require(!dataContract.isCompanyIdTaken(_id), 'id_already_exists');
        // check there is payment on tx
        require(msg.value >= dataContract.CREATE_COMPANY_PRICE(), 'Insufficient_payment');
-       
-
        // check this address has not been used before (ony one address is admin of company)
        bytes memory checkId = bytes(dataContract.getCompanyId(msg.sender)); // Uses memory
        require( checkId.length == 0, "address_already_admin_of_company");
@@ -134,7 +125,7 @@ constructor(address _dataContractAddress) payable {
 
  // RFP  functions *****************************************************************
 
- //      CreateRFP The sender creates an RFP. A record RFP is create and mapped from the current RFPIndex (currentRFPIdx)
+ //      The sender creates an RFP. A record RFP is create and mapped from the current RFPIndex (currentRFPIdx)
  //      to the new record and the index is added to company array or RFPs
  //      Validates date is not older than today minus 1 hour to accmodate UX/UI delays to send the data
  //      Validates dates correct sequence
@@ -151,13 +142,8 @@ constructor(address _dataContractAddress) payable {
     ) public payable {
         // check this RFP ID is unique for this address, revert if found an equal Id
         bytes32 pair= concatStringAndAddress(_name, msg.sender);
-        //require(!RfpIds[pair], 'rfpid_already_taken');
         require(!dataContract.getRfpIds(pair), 'rfpid_already_taken');
         // check TX is sufficiently funded
-        // require(
-        //     msg.value >= (_contestType == ContestType.OPEN ? CREATE_OPEN_RFP_PRICE : CREATE_INVITATION_RFP_PRICE),
-        //     "Insufficient_payment"
-        // );
         require(
         msg.value >= (_contestType == proponShared.ContestType.OPEN ? dataContract.CREATE_OPEN_RFP_PRICE() : 
                        dataContract.CREATE_INVITATION_RFP_PRICE()),
@@ -168,7 +154,6 @@ constructor(address _dataContractAddress) payable {
         require(bytes(chekString).length!=0,'address_not_admin'); // this address is not admin
         // Next sentence that was disable for developing and testing is 
         require(_openDate >= (block.timestamp - 3600),'opendate_behind_today'); // allow one hour behind!
-
         require(_openDate < _endReceivingDate, 'initial_date_wrong');
         require(_endReceivingDate < _endDate, 'receiving_date_wrong');
         uint currRFPIdx = dataContract.getcurrentRFPIdx();
@@ -192,10 +177,6 @@ constructor(address _dataContractAddress) payable {
         dataContract.setRFP(currRFPIdx, newRFP); // Assume this setter exists
         dataContract.addCompanyRFP(msg.sender, currRFPIdx); // Assume this setter exists        
         dataContract.incrementRFPIdx();
-        // dataContract.RfpIds[pair]=true;      // Reserve the RFP Id
-        // dataContract.RFPs[currRFPIdx] = newRFP;
-        // dataContract.Companies[msg.sender].company_RFPs.push(currRFPIdx);
-        // dataContract.currentRFPIdx=dataContract.currRFPIdx + 1;
         emit NewRFPCreated(msg.sender, currRFPIdx, _name);
     }
 
@@ -214,7 +195,7 @@ constructor(address _dataContractAddress) payable {
         onlyCompanyAdmin(companyId) 
         onlyIssuer(_rfpId)
         rfpCancelled(_rfpId) {
-        RFP memory rfp = dataContract.getRFP(_rfpId);
+        RFP memory rfp = dataContract.getRFPbyIndex(_rfpId);
         require(rfp.contestType==ContestType.INVITATION_ONLY,'wrong_contest_type');
         require(rfp.endReceivingDate > block.timestamp,'end_receiving_reached');
         require( (rfp.participants.length + invitedCompanies.length) <= dataContract.MAX_GUEST_INVITATION_TENDER(), 
@@ -233,12 +214,11 @@ constructor(address _dataContractAddress) payable {
         }
     }
 
-
     // Register sender as participating in an Open RFP
     // rejects and revert  if address already in list of registered participants
     // reject if limit  MAX_GUEST_OPEN_TENDER  has already been reached
     function registertoOpenRFP(uint _rfpId) public payable  rfpCancelled(_rfpId) {
-        RFP memory rfp = dataContract.getRFP(_rfpId);
+        RFP memory rfp = dataContract.getRFPbyIndex(_rfpId);
         require(msg.value>=dataContract.REGISTER_OPEN_RFP_PRICE(),'Insufficient_payment_fee');
         //disable
         require(rfp.contestType==ContestType.OPEN, 'not_open_tender');
@@ -267,8 +247,7 @@ constructor(address _dataContractAddress) payable {
             _documentHashes.length == _idxs.length,
             "input_array_lengths_no_match"
         );
-        RFP memory rfp = dataContract.getRFP(_rfpIdx);
-        //bool rfpOwner = msg.sender==RFPs[_rfpIdx].issuer;
+        RFP memory rfp = dataContract.getRFPbyIndex(_rfpIdx);
         bool rfpOwner = msg.sender==rfp.issuer;
         // if not RFP owner, check the sender is in participants list
         if (!rfpOwner) {
@@ -297,7 +276,7 @@ constructor(address _dataContractAddress) payable {
                     require(!docOwnerAllowedTypes,'participant_bad_doctype');
                     // is on time?
                     require(rfp.endReceivingDate > block.timestamp,'end_receiving_reached');
-                    }
+                }
             // so far so good, push it to contract state
             dataContract.addDocument(
                         _rfpIdx,
@@ -316,14 +295,12 @@ constructor(address _dataContractAddress) payable {
     //  _companyId  - Id of RFP Issuing company
     //  winners  - array with winners addresses. If addres 0x is declared deserted
     function declareWinners(uint _rfpIndex, string memory _companyId, address[] memory winners) public  
-    onlyCompanyAdmin(_companyId)
-    onlyIssuer(_rfpIndex)
-    rfpCancelled(_rfpIndex)
+        onlyCompanyAdmin(_companyId)
+        onlyIssuer(_rfpIndex)
+        rfpCancelled(_rfpIndex)
     {
         // first check conditions are met
-        RFP memory rfp = dataContract.getRFP(_rfpIndex);
-
-        
+        RFP memory rfp = dataContract.getRFPbyIndex(_rfpIndex);
         require(rfp.winners.length == 0, 'rfp_already_awarded'); // Awarding only once is allowed
         require(!rfp.canceled, 'already_canceled');        
          uint itemsLength=rfp.items.length;
@@ -332,7 +309,7 @@ constructor(address _dataContractAddress) payable {
                 (itemsLength == 0 || itemsLength == 1) && winners.length == 1 ||
                 itemsLength >= 2 && winnersLength == itemsLength,
                 "not_matching_winners"
-            );                    
+                );                    
         require(block.timestamp >= rfp.endDate, 'enddate_not_reached_yet');
         for (uint i=0; i < winnersLength; i++) {
             address winner=winners[i];
@@ -345,10 +322,8 @@ constructor(address _dataContractAddress) payable {
                 }
             }
         }
-        
         dataContract.addWinnersToRFP(_rfpIndex, winners);
         dataContract.acrueWinsToCompany(_rfpIndex, uniqueWinners);
-        
         // reset mapping and array for next use
         uniqueWinners = emptyAddressArray;
         for (uint i=0; i < winnersLength; i++) {
@@ -356,23 +331,19 @@ constructor(address _dataContractAddress) payable {
         }
     } 
 
-function cancelRFP(string memory _companyId, uint _rfpIndex ) public 
+    function cancelRFP(string memory _companyId, uint _rfpIndex ) public 
         onlyCompanyAdmin(_companyId)
         onlyIssuer(_rfpIndex) 
         rfpCancelled(_rfpIndex) {
-        RFP memory rfp = dataContract.getRFP(_rfpIndex);
+        RFP memory rfp = dataContract.getRFPbyIndex(_rfpIndex);
         require(rfp.winners.length==0,'rfp_already_awarded'); // can't cancel if already awarded
         dataContract.setRFPCanceled(_rfpIndex, true);
         dataContract.setRFPCancelDate(_rfpIndex, block.timestamp);
-        // RFPs[_rfpIndex].canceled = true;
-        // RFPs[_rfpIndex].cancelDate = block.timestamp;
     }   
-
 
     function destroy() public onlyOwner() {
         selfdestruct(payable(owner));       // always send funds to owner as in withdraw function, not manager  
     }
-
 }
 
 

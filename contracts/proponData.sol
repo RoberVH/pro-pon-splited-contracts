@@ -41,66 +41,6 @@ contract pro_ponData is proponShared {
     uint private currentRFPIdx=0;  // global that keeps track of all RFPs issued by all companies
 
 
-/* ContestType - Enumeration of type of RFP
-            Open allow any company to participate, it will have a owner define participants limit
-*/
-  //  enum  ContestType{ OPEN, INVITATION_ONLY }   
-
-/* DocType Enumeration defining type of documents associated with RFP
-*/
-    //  enum DocType {
-    //     documentRequestType,            // RFP doc  from Owner
-    //     documentQandAType,              // Clarification Questions and answers from Owner
-    //     documentAmendment,               // Contract, adenda, guaranties etc documents created between owner and winners 
-    //     documentProposalType,           // Technical offering, RFPs answers from participant
-    //     documentPricingOfferingType,    // Economic Proposal from participant
-    //     documentLegalType,              // Legal documents from participants
-    //     documentFinancialType,          // Financial statements and documents from participants
-    //     documentAdministrativeType,     // Administrative documents from participants
-    //     // Documents post RFP. These are for future versions where follow up of RFP Documents like contracts
-    //     // Project progress reports, informs etc
-    //     documentContract,               // Contract documents
-    //     documentAnnex,                  // Annexes document to contracts
-    //     documentPProgress               // Status and progress reports
-    // }
- 
-    // // Company. Records all companies in Pro-pon contract
-    // struct Company {
-    //     string id;
-    //     string name;
-    //     string country;     // 3-code int'l country code
-    //     uint16 RFPSent;       // How many RFP the company has partipated as invited / self-registered
-    //     uint[] RFPsWins;     // Global Ids of RFPs this company has won or won one or more items from   
-    //     uint[] company_RFPs;     // array of RFPs issued by this company
-    // }
-
-    // // RFP. Record of RFP contests issued by companies in Pro-pon contract
-    // struct RFP {
-    //     string name;            // In UI/UX  is the ID of the RFP
-    //     string description;     // In UI/UX  is the name of the RFP
-    //     uint rfpIndex;            // Global Id for this RFP  (in RFPs array)
-    //     string rfpwebsite;      // Company web page for the RFP
-    //     uint openDate;          // date when start receiving proposals
-    //     uint endReceivingDate;  // date when finish  receiving proposals
-    //     uint endDate;           // date when password of proposals is released
-    //     bool canceled;          // the contest was called off, no proposal was satisfactory
-    //     uint cancelDate;        // Date the contest was canceled
-    //     address[] participants;  // Keep tracks of invited/participant companies to this RFP, store companies ID
-    //     proponShared.ContestType contestType;
-    //     string[] items;         // Optional, the name of different requesting groups of items asked for
-    //                             // each item can have a different winner
-    //     address[] winners;       // address of winner of each item (if no Items RFP winner is in winner[0])
-    //     address issuer;          // Reference back to company issuing this RFP
-    // }
-
-    // // Documents. Record of RFP Proposal Documents metadata 
-    // struct Document {
-    //     uint docType;            // 0 is a requesting RFP Doc/  1 is a Response RFP Doc
-    //     string name;
-    //     address owner;             // of the document
-    //     string documentHash;   // act as unique id
-    //     string idx;            // Id storage on arweave (https://arweave.net/{idx})
-    // }
 
     // Companies in the system. Address of admin of company. User can't loose this address because company data would be lost
     mapping(address => Company)  Companies;  
@@ -114,11 +54,6 @@ contract pro_ponData is proponShared {
     // RFPDocuments  maps an RFP index to a Document 
     mapping(uint => Document[])  RFPDocuments;  
 
-    // event to send when a company has been created
-    // event NewCompanyCreated(address indexed sender, string id, string name);
-
-//    // event to send when an RFP has been created
-//     event NewRFPCreated(address indexed sender, uint id, string name);
    
 
 
@@ -321,9 +256,9 @@ contract pro_ponData is proponShared {
     //   RFP Getters  ----------------------------------------
 
     // returns the RFP whole record on mapping _rfpIdx index
-    function getRFP(uint256 rfpId) public view returns (RFP memory) {
-        return RFPs[rfpId];
-    }    
+    // function getRFP(uint256 rfpId) public view returns (RFP memory) {
+    //     return RFPs[rfpId];
+    // }    
 
     // getRFPbyIndex receive an index and returns the RFP if exists
     function getRFPbyIndex(uint _rfpId) public view returns (RFP memory) {
