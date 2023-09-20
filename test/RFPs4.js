@@ -268,7 +268,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = await company.company_RFPs[1]  
       await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
-        RFPidx.toNumber(),
+        RFPidx,
         test_pro_pon2.id,
         [owner.address,addr1.address,addr2.address,addr3.address])
       let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
@@ -362,19 +362,19 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       let company= await proponDataContract.getCompany(addr1.address)
       let RFPidx = await company.company_RFPs[1]  
       await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
-        RFPidx.toNumber(),
+        RFPidx,
         test_pro_pon2.id,
         [owner.address,addr1.address])  // should ignore addr1 add only owner total 1 invited
      await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
-        RFPidx.toNumber(),
+        RFPidx,
         test_pro_pon2.id,
         [owner.address, addr6.address]) // should ignore owner add only addr6 total 2 invited
         await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
-        RFPidx.toNumber(),
+        RFPidx,
         test_pro_pon2.id,
         [addr4.address,addr3.address, addr6.address])              // ignore addr6 add addr4 & addr3 total 4 invited
         await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
-          RFPidx.toNumber(),
+          RFPidx,
           test_pro_pon2.id,
           [addr8.address]) // should add addr8 total 5 invited  */
       let RFP = await proponDataContract.getRFPbyIndex(RFPidx)
