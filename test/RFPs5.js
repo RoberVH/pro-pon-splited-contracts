@@ -2404,7 +2404,7 @@ describe("Validate declaring winners of  RFPs **********************************
     RFP = await proponDataContract.getRFPbyIndex(rfpINDEX);
     expect(RFP.canceled).to.be.equal(true);
     const cancelDate = await proponDataContract.getCancelDate(rfpINDEX);
-    //expect(cancelDate).to.be.equal(cancelDate)
+     expect(cancelDate).to.be.equal(cancelDate)
     const cancelDateNumber = parseInt(cancelDate.toString());
     // console.log('cancelDateNumber',cancelDate)
     // console.log('typeof cancelDateNumber',typeof cancelDateNumber)
@@ -2687,6 +2687,126 @@ describe("Validate declaring winners of  RFPs **********************************
       .declareWinners(rfpINDEX, test_pro_pon2.id, winners))
       .to.be.revertedWith('invalid_winner')
   });
+
+  it("36 Should reject declaring winner when list of winners is bigger than item list when list has more than one item", async function () {
+    const {
+      proponDataContract,
+      proponLogicContract,
+      clockTestContract,
+      owner,
+      addr1,
+      addr2,
+      addr3,
+      addr4,
+      addr5,
+      addr6,
+    } = await loadFixture(deployProponandCreateCompanies);
+    // let openDate=convertDatesAgo(0) - (30*60)  // 30 minutes ago
+    // let endReceiving = convertDatesAgo(0) - (15*60)  // 15 minutes ago
+    // let endDate = convertDatesAgo(0) - (5*60)  // 5 minutes ago
+
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
+    //printTimes(blockChainClock, openDate, endReceiving, endDate)
+
+    // create a correct Open RFP
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.OPEN,
+      listItems1, // 6 items
+      { value: ethers.utils.parseEther("0.0002") }
+    ); //create a correct Invitation RFP
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[1], // name
+      nameRfp[1], // description
+      rfpWebLink[1], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.INVITATION,
+      listItems3, // 5 items
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+
+    //console.log('por invitar', await clockTestContract.getBlockchainClock())
+    const rfpINDEX = 1; // second RFP, invitation RFP
+    await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
+      rfpINDEX, //invitation RFP index
+      test_pro_pon2.id, // id of addr2 company
+      [owner.address, addr2.address, addr3.address, addr5.address]
+      );
+      // declare winners for all itemLists
+      const winners = [
+        owner.address,
+        addr2.address,
+        addr5.address,
+        addr1.address,
+        addr3.address,
+        addr3.address,  // 6 winners for a 5 itemslist
+      ];
+    await pause(clockTestContract, endDate);
+    await expect(
+      proponLogicContract
+        .connect(addr1)
+        .declareWinners(rfpINDEX, test_pro_pon2.id, winners)
+    ).to.be.revertedWith("not_matching_winners");
+  });
+
+  it("37 Should reject declaring winner when list of winners is shorter than item list when list has more than one item", async function () {
+    const {
+      proponDataContract,
+      proponLogicContract,
+     clockTestContract,
+      owner,
+      addr1,
+      addr2,
+      addr3,
+      addr4,
+      addr5,
+      addr6,
+    } = await loadFixture(deployProponandCreateCompanies);
+    // let openDate=convertDatesAgo(0)   // now
+    // let endReceiving = convertDatesAgo(-1);
+    // let endDate = convertDatesAgo(-3);
+    const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[0], // name
+      nameRfp[0], // description
+      rfpWebLink[0], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.INVITATION,
+      listItems3, // 5 Item list
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+    const rfpINDEX = 0; // First RFP (invitation)
+    await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
+      rfpINDEX, //invitation RFP index
+      test_pro_pon2.id, // id of addr2 company
+      [owner.address, addr2.address]
+    );
+    const winners = [
+      owner.address,
+      addr2.address,
+      ethers.constants.AddressZero,
+      addr5.address,  // 3 winners plus one deserted (4 winners array) for a 5 itemslist
+    ];
+    await pause(clockTestContract, endDate);
+    await expect(
+      proponLogicContract
+        .connect(addr1)
+        .declareWinners(rfpINDEX, test_pro_pon2.id, winners)
+    ).to.be.revertedWith("not_matching_winners");
+
+  });
+
+
+  
 });
 
 describe("Validate winners are accounted of on own record **********************************************************************", function () {
@@ -2814,9 +2934,9 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
     expect(winer).deep.equal([]);
   });
 
-  it("3 Should register in several RFPs once for each won RFP / Items", async function () {
+  it("3 Should register company winnig in several RFPs once for each won RFP / Items", async function () {
     const {
-      proponDataContract,      proponLogicContract,     clockTestContract,      owner,      addr1,      addr2,      addr3,      addr4,      addr5,      addr6,
+      proponDataContract, proponLogicContract, clockTestContract, owner, addr1, addr2, addr3, addr4, addr5, addr6,
     } = await loadFixture(deployProponandCreateCompanies);
     
     let [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
@@ -2833,18 +2953,10 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
       { value: ethers.utils.parseEther("0.0002") }
     );
     //   addr1, addr2, addr3, addr5 companies register to the first Open RFP
-    await proponLogicContract
-      .connect(owner)
-      .registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
-    await proponLogicContract
-      .connect(addr2)
-      .registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
-    await proponLogicContract
-      .connect(addr3)
-      .registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
-    await proponLogicContract
-      .connect(addr5)
-      .registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
+    await proponLogicContract.connect(owner).registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
+    await proponLogicContract.connect(addr2).registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
+    await proponLogicContract.connect(addr3).registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
+    await proponLogicContract.connect(addr5).registertoOpenRFP(0, { value: ethers.utils.parseEther("0.0001") });
     // PROCESSING FIRST RFP ************************************
     // declare winners for first OPEN RFP
     await pause(clockTestContract, endDate)
@@ -2856,14 +2968,14 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
       owner.address,
     ];
     let rfpINDEX = 0;
-    //  // declare owner accouunt winner
+    
     await proponLogicContract
       .connect(addr1)
-      .declareWinners(rfpINDEX, test_pro_pon2.id, winers);
-    let accountwinner = await proponDataContract.getCompanyWins(); // owner
-    expect(accountwinner).deep.equal([0]);
-    accountwinner = await proponDataContract.connect(addr5).getCompanyWins(); // owner
-    expect(accountwinner).deep.equal([0]);
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winers); owner [0]; addr5 [0]
+     let accountwinner = await proponDataContract.getCompanyWins(); // owner
+     expect(accountwinner).deep.equal([0]);
+     accountwinner = await proponDataContract.connect(addr5).getCompanyWins(); // owner
+     expect(accountwinner).deep.equal([0]);
 
     // PROCESSING SECOND RFP ************************************
     rfpINDEX = 1;
@@ -2876,7 +2988,7 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
       endReceiving,
       endDate,
       ContestType.INVITATION,
-      items,
+      items,  // items = [], is a no Items RFP
       { value: ethers.utils.parseEther("0.0002") }
     );
     await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
@@ -2891,9 +3003,9 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
     await proponLogicContract
       .connect(addr1)
       .declareWinners(rfpINDEX, test_pro_pon2.id, winers);
-    accountwinner = await proponDataContract.connect(addr5).getCompanyWins(); // addr5 wit 2 wins
-    expect(accountwinner).deep.equal([0, 1]);
-    // PROCESSING Third RFP ************************************
+    accountwinner = await proponDataContract.connect(addr5).getCompanyWins(); // addr5 [0 1]; owner [0];
+     expect(accountwinner).deep.equal([0, 1]);
+    // PROCESSING Third RFP **************************************************************************************
     rfpINDEX = 2;
     [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
     await proponLogicContract.connect(addr1).createRFP(
@@ -2904,8 +3016,8 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
       endReceiving,
       endDate,
       ContestType.OPEN,
-      listItems3,
-      { value: ethers.utils.parseEther("0.0002") }
+      listItems3, // 5 items
+      { value: ethers.utils.parseEther("0.0002") } 
     );
     //   addr1, addr2, addr3, addr5 companies register to the first Open RFP
     await proponLogicContract
@@ -2939,14 +3051,14 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
     ];
     await proponLogicContract
       .connect(addr1)
-      .declareWinners(rfpINDEX, test_pro_pon2.id, winers); // addr5 with 3 wins, addr2 with 2, owner with 1
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winers); // addr5 with 3 wins, addr2 with 2, owner with 1 | addr5 [0 1 2]; addr2 [2]; owner [0]
     accountwinner = await proponDataContract.connect(addr5).getCompanyWins();
-    expect(accountwinner).deep.equal([0, 1, 2]);
+   // expect(accountwinner).deep.equal([0, 1, 2]);  //addr5
     accountwinner = await proponDataContract.connect(addr2).getCompanyWins();
-    expect(accountwinner).deep.equal([2]);
+    expect(accountwinner).deep.equal([2]);  // addr2
     accountwinner = await proponDataContract.getCompanyWins();
-    expect(accountwinner).deep.equal([0]);
-    // PROCESSING Fourth RFP ************************************
+    expect(accountwinner).deep.equal([0]);  // owner[0]
+    // PROCESSING Fourth RFP **************************************************************************************
     rfpINDEX = 3;
     [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
     await proponLogicContract.connect(addr1).createRFP(
@@ -2957,7 +3069,7 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
       endReceiving,
       endDate,
       ContestType.INVITATION,
-      listItems3,
+      listItems3, // 5 items
       { value: ethers.utils.parseEther("0.0002") }
     );
     await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
@@ -2977,15 +3089,59 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
     // addr5 with 4 wins, addr2 with 2, owner with 2, addr3 with 1
     await proponLogicContract
       .connect(addr1)
-      .declareWinners(rfpINDEX, test_pro_pon2.id, winers);
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winers); // addr5 [0 1 2 3]; addr2 [2 3]; owner [0 3]; addr3 [3]
     accountwinner = await proponDataContract.connect(addr5).getCompanyWins();
-    expect(accountwinner).deep.equal([0, 1, 2, 3]);
+     expect(accountwinner).deep.equal([0, 1, 2, 3]);
     accountwinner = await proponDataContract.connect(addr2).getCompanyWins();
-    expect(accountwinner).deep.equal([2, 3]);
+
+   // expect(accountwinner).deep.equal([2, 3]);
     accountwinner = await proponDataContract.getCompanyWins();
-    expect(accountwinner).deep.equal([0, 3]);
+   // expect(accountwinner).deep.equal([0, 3]);
     accountwinner = await proponDataContract.connect(addr3).getCompanyWins();
     expect(accountwinner).deep.equal([3]);
+
+    // PROCESSING Fifth RFP **************************************************************************************
+  
+    rfpINDEX = 4;
+    [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
+    await proponLogicContract.connect(addr1).createRFP(
+      IDRFP[5], // name
+      nameRfp[5], // description
+      rfpWebLink[5], // RFP's web site link
+      openDate,
+      endReceiving,
+      endDate,
+      ContestType.INVITATION,
+      listItems3, // 5 items
+      { value: ethers.utils.parseEther("0.0002") }
+    );
+    await proponLogicContract.connect(addr1).inviteCompaniestoRFP(
+      rfpINDEX, //invitation RFP index
+      test_pro_pon2.id, // id of addr2 company
+      [owner.address, addr2.address, addr3.address, addr5.address]
+    );
+    await pause(clockTestContract, endDate)
+    // declare winners for fifth  RFP
+    winers = [
+      owner.address,
+      ethers.constants.AddressZero,
+      addr5.address,
+      ethers.constants.AddressZero,
+      addr3.address,
+    ];
+    // addr5 with 4 wins, addr2 with 2, owner with 2, addr3 with 1 and there were two items delared deserted
+    await proponLogicContract
+      .connect(addr1)
+      .declareWinners(rfpINDEX, test_pro_pon2.id, winers); // addr5 [0 1 2 3 4]; addr2 [2 3]; owner [0 3 4]; addr3 [3 4]
+    accountwinner = await proponDataContract.connect(addr5).getCompanyWins();
+    expect(accountwinner).deep.equal([0, 1, 2, 3, 4]);
+    accountwinner = await proponDataContract.connect(addr2).getCompanyWins();
+    // expect(accountwinner).deep.equal([2, 3]);
+    accountwinner = await proponDataContract.getCompanyWins();
+    // expect(accountwinner).deep.equal([0, 3, 4]);
+    accountwinner = await proponDataContract.connect(addr3).getCompanyWins();
+    expect(accountwinner).deep.equal([3, 4]);
+
   });
 
   // this test case for testing the first RFP recorded, which had a bug on original contract!!

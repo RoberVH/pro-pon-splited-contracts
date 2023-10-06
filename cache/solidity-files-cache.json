@@ -144,8 +144,8 @@
       ]
     },
     "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponLogic.sol": {
-      "lastModificationDate": 1696446522510,
-      "contentHash": "428a0fc746b6013bc78e2411f5338d2a",
+      "lastModificationDate": 1696620297274,
+      "contentHash": "8c4572bcc6d95ea05a3bd48c05892376",
       "sourceName": "contracts/proponLogic.sol",
       "solcConfig": {
         "version": "0.8.9",

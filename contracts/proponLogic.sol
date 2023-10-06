@@ -17,10 +17,6 @@ contract pro_ponLogic is proponShared {
     pro_ponData dataContract; // pro_ponData.sol is the Contract that holds all Pro-pon data, constants, structs, vars
     address private owner;
 
-    // state vars to hold temporary values in functions
-    mapping(address => bool) uniqueAddress;
-    address[] emptyAddressArray = new address[](0);
-    address[] uniqueWinners = new address[](0);
 
     constructor(address _dataContractAddress) payable {
         dataContract = pro_ponData(_dataContractAddress);
@@ -127,6 +123,16 @@ contract pro_ponLogic is proponShared {
             ) return true; // account for deserted Items
         return false;
     }
+
+function isInArray(address[] memory arr, address value, uint8 count) internal pure returns (bool) {
+    for (uint8 i = 0; i < count; i++) {
+        if (arr[i] == value) {
+            return true;
+        }
+    }
+    return false;
+    }
+
 
     // Company functions ************************************************************
     function createCompany(
@@ -365,7 +371,7 @@ contract pro_ponLogic is proponShared {
     //  Register all account addresess of winners for Items of an RFP or for the whole RFP if no Items (at index 0 of winners array)
     //  _rfpIndex - Global Id of RFP
     //  _companyId  - Id of RFP Issuing company
-    //  winners  - array with winners addresses. If addres 0x is declared deserted
+    //  winners  - array with winners addresses. If a winner is an addres 0x then the RFP or Item was declared deserted
     function declareWinners(
         uint16 _rfpIndex,
         string memory _companyId,
@@ -376,18 +382,24 @@ contract pro_ponLogic is proponShared {
         onlyIssuer(_rfpIndex)
         rfpCancelled(_rfpIndex)
     {
+
         // first check conditions are met
         RFP memory rfp = dataContract.getRFPbyIndex(_rfpIndex);
         require(rfp.winners.length == 0, "rfp_already_awarded"); // Awarding only once is allowed
         require(!rfp.canceled, "already_canceled");
         uint8 itemsLength = uint8(rfp.items.length);
         uint8 winnersLength = uint8(winners.length);
+        // RFPs with no items or 1 itme should have equally one winner
         require(
             ((itemsLength == 0 || itemsLength == 1) && winners.length == 1) ||
                 (itemsLength >= 2 && winnersLength == itemsLength),
             "not_matching_winners"
         );
         require(block.timestamp >= rfp.endDate, "enddate_not_reached_yet");
+        // other solutions were exploore to avoid defining a new uniqueWinners but implied to have  acontract starte var
+        // that could potential present problems with race conditions so here is a expensier creation of a new array but safer
+        address[] memory uniqueWinners = new address[](winners.length);
+        uint8 uniqueCount = 0;        
         for (uint8 i = 0; i < winnersLength; i++) {
             address winner = winners[i];
             require(winner != msg.sender, "cannot_self_award");
@@ -395,20 +407,20 @@ contract pro_ponLogic is proponShared {
                 winnerIsParticipatingorZero(winner, rfp.participants),
                 "invalid_winner"
             );
-            if (!uniqueAddress[winner]) {
-                uniqueAddress[winner] = true;
+            if (!isInArray(uniqueWinners, winner, uniqueCount)) {
                 if (winner != address(0)) {
-                    uniqueWinners.push(winner);
+                    uniqueWinners[uniqueCount] = winner;
+                    uniqueCount++;
                 }
             }
         }
-        dataContract.addWinnersToRFP(_rfpIndex, winners);
-        dataContract.acrueWinsToCompany(_rfpIndex, uniqueWinners);
-        // reset mapping and array for next use
-        uniqueWinners = emptyAddressArray;
-        for (uint8 i = 0; i < winnersLength; i++) {
-            uniqueAddress[winners[i]] = false;
+   
+        address[] memory finalUniqueWinners = new address[](uniqueCount);
+        for(uint8 i = 0; i < uniqueCount; i++) {
+            finalUniqueWinners[i] = uniqueWinners[i];
         }
+        dataContract.addWinnersToRFP(_rfpIndex, winners);
+        dataContract.acrueWinsToCompany(_rfpIndex, finalUniqueWinners);
     }
 
     function cancelRFP(
@@ -429,4 +441,5 @@ contract pro_ponLogic is proponShared {
     function destroy() public onlyOwner {
         selfdestruct(payable(owner)); // always send funds to owner as in withdraw function, not manager
     }
+    
 }
