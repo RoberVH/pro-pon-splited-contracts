@@ -511,7 +511,7 @@ const createRFP = async (proponContract, address, RFPNameIdx, ContestType, Items
       expect(RFP.rfpIndex).to.equal(2);    // it was assigned at 3rd RFP
       // check 7th RFP created alright (index 6)
       RFP = await proponDataContract.getRFPbyIndex(6)   // 7th RFP
-      expect(RFP.rfpIndex.toNumber()).to.equal(6);    // 
+      expect(RFP.rfpIndex).to.equal(6);    // 
     });   
 
     it("10 Should record correctly weblink in RFP", async function () {

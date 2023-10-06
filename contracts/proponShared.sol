@@ -1,5 +1,6 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.7.0 <0.9.0;
+//pragma solidity >=0.7.0 <0.9.0;
+pragma solidity ^0.8.9;
 
 /**proponShared Contract
  * Holds enums & structs used by proponData and proponLogic that can't be passed as imports from Data to Logic contracts
@@ -48,7 +49,7 @@ contract proponShared {
     struct RFP {
         string name; // In UI/UX  is the ID of the RFP
         string description; // In UI/UX  is the name of the RFP
-        uint rfpIndex; // Global Id for this RFP  (in RFPs array)
+        uint16 rfpIndex; // Global Id for this RFP  (in RFPs array)
         string rfpwebsite; // Company web page for the RFP
         uint openDate; // date when start receiving proposals
         uint endReceivingDate; // date when finish  receiving proposals

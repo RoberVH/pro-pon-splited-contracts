@@ -406,6 +406,53 @@ describe("Test setting/getting prices on Manager Contract", function () {
       .to.be.equal(guests)
     });
     
+  it("7 Should allow get owner of ProponLogic contract", async function () {
+    const {  proponDataContract, proponLogicContract,  owner, addr1 } = await loadFixture(deployPropon);
+    expect(await  proponLogicContract.getOwner())
+      .to.be.equal(owner.address)
+    });
+
+  it("8 Should allow  owner of ProponLogic contract set another owner", async function () {
+    const {  proponDataContract, proponLogicContract,  owner, addr1 } = await loadFixture(deployPropon);
+    await proponLogicContract.setOwner(addr1.address)
+    expect(await  proponLogicContract.getOwner())
+      .to.be.equal(addr1.address)
+    });
+
+  it("9 Should allow  current owner of ProponLogic contract to withdraw balance", async function () {
+    const {  proponDataContract, proponLogicContract,  owner, addr1 } = await loadFixture(deployPropon);
+    const price=1
+    let txn = await proponDataContract.setCreateCompanyPrice(ethers.utils.parseUnits(price.toString())) 
+    let companyPrice = await proponDataContract.CREATE_COMPANY_PRICE()
+    const precioMatic= ethers.utils.formatUnits(companyPrice,"ether")
+    expect(parseFloat(precioMatic)).to.equal(price)
+// create company
+      txn = await proponLogicContract.createCompany(
+      test_pro_pon1.id,
+      test_pro_pon1.name,
+      test_pro_pon1.country,
+      {value: ethers.utils.parseEther(price.toString())}
+      )
+    // addr1  hasn't created any company
+    let companyId= await proponDataContract.getCompanyId(addr1.address)
+    expect(companyId).to.equal('');    
+    await proponLogicContract.setOwner(addr1.address)
+    let contratoantes= await ethers.provider.getBalance(proponLogicContract.address)
+    //console.log('balance contrato antes de retirarle:', contratoantes.toString())
+    let baladdr1antes=await ethers.provider.getBalance(addr1.address)
+    await proponLogicContract.connect(addr1).withdraw()
+    let contra= await ethers.provider.getBalance(proponLogicContract.address)
+    let balAddrdespues= await ethers.provider.getBalance(addr1.address)
+    //console.log('balance addr1 (owner) despues de retirar del contrato:', balAddrdespues)
+    const expected = baladdr1antes.add(contratoantes);
+    const isEqual = balAddrdespues.gt(baladdr1antes)
+    // balance of addr1 is bigger after receiving withdrawal 
+    expect(isEqual).to.be.true
+    // contract balance is zero after withdrawal
+    expect(contra).to.be.equal(ethers.BigNumber.from('0'));
+    
+    });
+
   });
  
 

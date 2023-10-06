@@ -56,12 +56,15 @@ contract pro_ponData is proponShared {
     mapping(bytes32 => bool) RfpIds;
 
     // Modifiers ***************************************************************
-    // only owner can do administrative task
+    // only owner can do data related tasks: Setting Companies, RFPs and Documents
+    // is set to proponLogic contract that controls writing data
     modifier onlyOwner() {
         require(msg.sender == owner, "only_owner_allowed");
         _;
     }
 
+// only owner can do administrative tasks: Setting Prices, setting owner and destroy contract
+// is set to the external account that controls the contract
     modifier onlyManager() {
         require(msg.sender == manager, "only_manager_allowed");
         _;
@@ -231,7 +234,7 @@ contract pro_ponData is proponShared {
 
     // Company Getters  ----------------------------------------
 
-    // returns current id of company ofr companyAddress owner
+    // returns current id of company for companyAddress owner
     function getCompanyId(
         address companyAddress
     ) external view returns (string memory) {
@@ -289,6 +292,7 @@ contract pro_ponData is proponShared {
         return RFPs[rfpIdx].canceled;
     }
 
+    // get the boolean value telling if combination of address and rfp id has been used
     function getRfpIds(bytes32 pair) external view returns (bool) {
         return RfpIds[pair];
     }
@@ -300,7 +304,7 @@ contract pro_ponData is proponShared {
         return (RFPDocuments[_rfpIdx]);
     }
 
-    // final device to kill contract - escape function for live testing
+    // final device to kill contract - escape function for live testing, any funds go to owner contract
     function destroy() public onlyManager {
         selfdestruct(payable(owner));
     }

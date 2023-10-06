@@ -1,24 +1,39 @@
 // Scripts to recover matics from contracts and destroy contracts   at mumbai
 const { ethers } = require("hardhat");
 
-const address = '0x2F9A4aDCc776019cd3A510E79827c118e420d74c'    // deployed on may  6, 2023 
+// proponData
+const CONTRACT_ADDRESS_DATA='0x347C903B604f0E5BE5212A9C2150f5A27462F344'
+ // ProponData Contract owner: 0xE9B1436262593fA862911eDD0C78017B77D131ab
+ 
+ //const address = '0x2F9A4aDCc776019cd3A510E79827c118e420d74c'    // deployed on may  6, 2023 
+ const CONTRACT_ADDRESS_LOGIC='0xB7d0d95809C38F5456fC308A19973DfC630A7FF2'
+const address = '0xb7d0d95809c38f5456fc308a19973dfc630a7ff2' 
 
-const  jsoncontract = require('../artifacts/contracts/pro-pon.sol/pro_pon.json')   
+const  jsoncontractLogic = require('../artifacts/contracts/proponLogic.sol/pro_ponLogic.json')   
+const  jsoncontractLogicData = require('../artifacts/contracts/proponData.sol/pro_ponData.json')   
 
 const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE)
 const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
-const proponContract = new ethers.Contract(address, jsoncontract.abi , signer);
+const proponContractLogic = new ethers.Contract(address, jsoncontractLogic.abi , signer);
+const proponContractData = new ethers.Contract(CONTRACT_ADDRESS_DATA, jsoncontractLogicData.abi , signer);
+
 
   async function getBalance(address) {
       // Get the contract's balance
+  try {      
     const balance = await alchemyprovider.getBalance(address);
     console.log(`The balance of address ${address} is ${ethers.utils.formatEther(balance)} MATICS`);
     console.log('-------------------------------------------------------------------------------------------------------------------------------')
+  } catch (error) { 
+    console.log('Error consultando balances: ', error)
+  }
 }
 
 async function recoverBalance() {
-  console.log('Obteniendo saldo del contrato', proponContract.address)
-  const tx = await proponContract.withdraw();
+  console.log('Obteniendo saldo del contrato', proponContractLogic.address)
+  const owner= proponContractLogic.getO
+  console.log('RECUPERANDO SALDO')
+  const tx = await proponContractLogic.withdraw();
   console.log(`Transaction hash: ${tx.hash}`);
 
   // Wait for the transaction to be mined
@@ -29,8 +44,8 @@ async function recoverBalance() {
 }
   async function destroyContract() {
     // Call the destroy() method
-    console.log('Destruyendo contrato', proponContract.address)
-    const tx = await proponContract.destroy();
+    console.log('Destruyendo contrato', proponContractLogic.address)
+    const tx = await proponContractLogic.destroy();
     console.log(`Transaction hash: ${tx.hash}`);
 
     // Wait for the transaction to be mined
@@ -40,7 +55,7 @@ async function recoverBalance() {
   }
 
   async function get1stRFP() {
-    let RFP =  await proponContract.getRFPbyIndex(0)
+    let RFP =  await proponContractData.getRFPbyIndex(0)
     console.log('RFPs[0]', RFP)
     console.log('------------------------------------------------------------------------------------------------------------')
 
@@ -80,14 +95,36 @@ function convertDate(date)   {
   return unixdate=Math.floor(new Date(date).getTime()/1000)
 }
   
+
+async function  showBal() {
+  console.log('Balances:')
+  console.log('CONTRATO PROPON LOGIC:')
+  await getBalance(proponContractLogic.address);
+  console.log('CUENTA DE DESPLEIGUE:')
+  await getBalance('0xE9B1436262593fA862911eDD0C78017B77D131ab');
+
+}
+
+async  function recuperaSaldo() {
+  showBal()
+  await recoverBalance()
+  console.log('Despues de recuperar saldo')
+  showBal()
+}
+
+
+
   const runMain = async () => {
     try {
-      await get1stRFP()
-      await getBalance(proponContract.address);
+      await showBal()
+     
+     // await get1stRFP()
       await getBalance('0xE9B1436262593fA862911eDD0C78017B77D131ab');
-      //await recoverBalance()
-      //await getBalance('0xE9B1436262593fA862911eDD0C78017B77D131ab');
-     // await destroyContract()
+      showBal()
+      await getBalance('0xE9B1436262593fA862911eDD0C78017B77D131ab');
+      recuperaSaldo()
+      //console.log('detruir contrato')
+      //await destroyContract()
       process.exit(0);
     } catch (error) {
       console.log(error);
@@ -99,14 +136,14 @@ function convertDate(date)   {
 
 
   // useful  code
-  // company= await proponContract.getCompany('0x6d96b8d1A4A9991a3831935BAb3413254cB02d87')
-  // currIdx= await proponContract.getcurrentRFPIdx()
+  // company= await proponContractLogic.getCompany('0x6d96b8d1A4A9991a3831935BAb3413254cB02d87')
+  // currIdx= await proponContractLogic.getcurrentRFPIdx()
   // console.log('RFPs so far: ', currIdx.toString())
   // for (let i=0; i < parseInt(currIdx.toString()); i++) {
-  //     RFP = await proponContract.getRFPbyIndex(i)
+  //     RFP = await proponContractLogic.getRFPbyIndex(i)
   //     console.log(i, 'RFP:')
   //     printObjectProperties(RFP)
-  //     const Doctos = await proponContract.getDocumentsfromRFP(i)
+  //     const Doctos = await proponContractLogic.getDocumentsfromRFP(i)
   //     for (let j=0; j< Doctos.length; j++) {
   //       console.log('Doctos:')
   //       printObjectProperties(Doctos[j])

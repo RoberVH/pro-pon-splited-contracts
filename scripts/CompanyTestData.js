@@ -13,7 +13,7 @@ const Companies = [
       "companyId": "00878-26672-033",
       "description": "Lammerick Inc.",
       "contactName": "Marguerite Lefleur",
-      "email": "marguerite.lefleur@lammerick.ca",
+      "email": "marguerite.lefleur@lammerick.ca", // rvicuna@hotmail.com
       "website": "www.lammerick.ca",
       "country": "CAN"
     },
@@ -58,7 +58,7 @@ const Companies = [
       "companyId": "0760-59213-8039",
       "description": "Lommax Realtor House Inc",
       "contactName": "Bernard Jonhson",
-      "email": "direct_sales@lommax.com",
+      "email": "direct_sales@lommax.com",   // roberto.vicuna@gmail.com
       "website": "www.digitalmarketing.ca",
       "country": "CAN"
     },
@@ -67,7 +67,7 @@ const Companies = [
       "description": "SUM072110V91",
       "companyName": "Surtidora de Materiales del Sureste SA de CV",
       "contactPerson": "Renata Madariaga",
-      "email": "renatamadariaga@sumatsur.com.mx",
+      "email": "renatamadariaga@sumatsur.com.mx", //rvicunah@yahoo.com
       "website": "www.sumatsur.com.mx",
       "country": "MEX"
       },

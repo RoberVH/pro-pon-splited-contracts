@@ -583,9 +583,6 @@ it("13 Should reject  owner of Open RFP declaring winners before endDate reached
     let openDate=convertDatesAgo(0) - (40 * 60)
     let endReceiving=convertDatesAgo(-1)
     let endDate=convertDatesAgo(-20) // 10 days into future
-    // console.log('endReceiving',convertUnixToDate(endReceiving))
-//    console.log('openDate',convertUnixToDate(openDate))
-    // console.log('endDate',convertUnixToDate(endDate))
     
     // create a correct Open RFP
     await proponLogicContract.connect(addr1).createRFP(

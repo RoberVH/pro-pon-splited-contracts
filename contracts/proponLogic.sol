@@ -79,6 +79,10 @@ contract pro_ponLogic is proponShared {
         owner = _newOwner;
     }
 
+    function getOwner() external view  returns (address) {
+        return owner;
+    }
+
     // utility functions ***************************************************************
     function equals(
         string memory a,

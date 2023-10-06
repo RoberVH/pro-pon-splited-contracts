@@ -2829,7 +2829,7 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
       endReceiving,
       endDate,
       ContestType.OPEN,
-      listItems3, // No items
+      listItems3,   // 5 items
       { value: ethers.utils.parseEther("0.0002") }
     );
     //   addr1, addr2, addr3, addr5 companies register to the first Open RFP
@@ -2862,6 +2862,9 @@ const [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockT
       .declareWinners(rfpINDEX, test_pro_pon2.id, winers);
     let accountwinner = await proponDataContract.getCompanyWins(); // owner
     expect(accountwinner).deep.equal([0]);
+    accountwinner = await proponDataContract.connect(addr5).getCompanyWins(); // owner
+    expect(accountwinner).deep.equal([0]);
+
     // PROCESSING SECOND RFP ************************************
     rfpINDEX = 1;
     [blockChainClock, openDate, endReceiving, endDate] = await setTimes(clockTestContract, 28, 2)
