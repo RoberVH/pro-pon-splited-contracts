@@ -1,9 +1,17 @@
 //SPDX-License-Identifier: MIT
 /**
- * pro-pon   -
+ * proponData   -
  *               Solidity Contract for Pro-pon application
  *               July/2022
  *               Author: Roberto Vicuña
+ * 
+ *              PropoData contract holds all the information for Pro-pon dApp.
+ *              It aims to host data concerning processes of RFP of companies registered with contract: RFPs, its Documents and Company metadata
+ *              ther are two main adresses: Owner and Manager
+ *              Owner is the address of companion contract ProponLogic which  has W/R rigths on data structures
+ *              Manager is the addres of deployer that can set prices variables for different operations
+ *              Destruction of contract is only allowed for Manager
+ * 
  */
 pragma solidity ^0.8.9;
 
@@ -308,4 +316,5 @@ contract pro_ponData is proponShared {
     function destroy() public onlyManager {
         selfdestruct(payable(owner));
     }
+
 }

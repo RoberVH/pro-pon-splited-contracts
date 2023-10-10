@@ -439,7 +439,7 @@ function isInArray(address[] memory arr, address value, uint8 count) internal pu
     }
 
     function destroy() public onlyOwner {
-        selfdestruct(payable(owner)); // always send funds to owner as in withdraw function, not manager
+        selfdestruct(payable(owner)); // always send funds to owner as in withdraw function
     }
     
 }

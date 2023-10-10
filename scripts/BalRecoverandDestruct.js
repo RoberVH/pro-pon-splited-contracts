@@ -2,19 +2,19 @@
 const { ethers } = require("hardhat");
 
 // proponData
-const CONTRACT_ADDRESS_DATA='0x347C903B604f0E5BE5212A9C2150f5A27462F344'
+const CONTRACT_ADDRESS_DATA='0x03d628939c4fAE2f7299f6d4635A9791d9E58c31'
  // ProponData Contract owner: 0xE9B1436262593fA862911eDD0C78017B77D131ab
  
  //const address = '0x2F9A4aDCc776019cd3A510E79827c118e420d74c'    // deployed on may  6, 2023 
- const CONTRACT_ADDRESS_LOGIC='0xB7d0d95809C38F5456fC308A19973DfC630A7FF2'
-const address = '0xb7d0d95809c38f5456fc308a19973dfc630a7ff2' 
+ //const CONTRACT_ADDRESS_LOGIC='0xB7d0d95809C38F5456fC308A19973DfC630A7FF2'
+ const CONTRACT_ADDRESS_LOGIC="0x9c094DeA795b9Bf045354c59E02c1F57C09FF6C7"
 
 const  jsoncontractLogic = require('../artifacts/contracts/proponLogic.sol/pro_ponLogic.json')   
 const  jsoncontractLogicData = require('../artifacts/contracts/proponData.sol/pro_ponData.json')   
 
 const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE)
 const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
-const proponContractLogic = new ethers.Contract(address, jsoncontractLogic.abi , signer);
+const proponContractLogic = new ethers.Contract(CONTRACT_ADDRESS_LOGIC, jsoncontractLogic.abi , signer);
 const proponContractData = new ethers.Contract(CONTRACT_ADDRESS_DATA, jsoncontractLogicData.abi , signer);
 
 
@@ -29,19 +29,6 @@ const proponContractData = new ethers.Contract(CONTRACT_ADDRESS_DATA, jsoncontra
   }
 }
 
-async function recoverBalance() {
-  console.log('Obteniendo saldo del contrato', proponContractLogic.address)
-  const owner= proponContractLogic.getO
-  console.log('RECUPERANDO SALDO')
-  const tx = await proponContractLogic.withdraw();
-  console.log(`Transaction hash: ${tx.hash}`);
-
-  // Wait for the transaction to be mined
-  const receipt = await tx.wait();
-  console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
-  console.log('------------------------------------------------------------------------------------------------------------')
-
-}
   async function destroyContract() {
     // Call the destroy() method
     console.log('Destruyendo contrato', proponContractLogic.address)
@@ -100,31 +87,47 @@ async function  showBal() {
   console.log('Balances:')
   console.log('CONTRATO PROPON LOGIC:')
   await getBalance(proponContractLogic.address);
-  console.log('CUENTA DE DESPLEIGUE:')
+  console.log('CUENTA DE DESPLIEGUE:')
   await getBalance('0xE9B1436262593fA862911eDD0C78017B77D131ab');
 
 }
 
 async  function recuperaSaldo() {
-  showBal()
-  await recoverBalance()
-  console.log('Despues de recuperar saldo')
-  showBal()
+  console.log('Recuperarando saldo')
+  const tx = await proponContractLogic.withdraw()
+  const receipt = await tx.wait()
+  console.log('receipt', receipt)
+  console.log(`Transaction confirmed in block ${receipt.blockNumber}`);
+  
+  //const tx = await proponContractLogic.withdraw();
+  // console.log(`Transaction hash de recuperacion de salto (esperando minado): ${tx.hash}`);
+  // // Wait for the transaction to be mined
+  // const receipt = await tx.wait();
+
 }
 
 
 
   const runMain = async () => {
     try {
-      await showBal()
-     
-     // await get1stRFP()
-      await getBalance('0xE9B1436262593fA862911eDD0C78017B77D131ab');
-      showBal()
-      await getBalance('0xE9B1436262593fA862911eDD0C78017B77D131ab');
-      recuperaSaldo()
-      //console.log('detruir contrato')
-      //await destroyContract()
+      // console.log('Por cambiar dueño de Logic a',process.env.POLYGON_MUMBAI_ACCOUNT )
+      // const tx1 = await proponContractLogic.setOwner(process.env.POLYGON_MUMBAI_ACCOUNT)
+      // const receipt= await tx1.wait()
+     //  console.log('cambio efectuado, recibo:', receipt)
+     await showBal()
+      const owner1 = await proponContractLogic.getOwner()
+      console.log('owner propon Logic', owner1)
+
+      // const owner= await proponContractLogic.getOwner()
+      // console.log('owner', owner)
+
+
+      // await showBal()
+      // await recuperaSaldo()
+     //  await showBal()
+       
+     // console.log('detruir contrato')
+     // await destroyContract()
       process.exit(0);
     } catch (error) {
       console.log(error);

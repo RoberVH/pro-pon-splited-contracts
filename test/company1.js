@@ -81,6 +81,19 @@ const test_pro_pon3 = {
     expect(managerofContractData).to.not.equal(owner.address)
     expect(managerofContractData).to.equal(addr1.address)
   });  
+
+  it("4 Should assign HardHat owner  address as owner of proponLogicContract", async function () {
+    const { proponDataContract,  proponLogicContract, owner, addr1} = await loadFixture(deployPropon);
+     const managerofContractLogic = await proponLogicContract.getOwner()
+    expect(managerofContractLogic).to.equal(owner.address)
+  });    
+
+  it("5 Should allow setting HardHat addr1 owner as owner of proponLogicContract", async function () {
+    const { proponDataContract,  proponLogicContract, owner, addr1} = await loadFixture(deployPropon);
+    await proponLogicContract.setOwner(addr1.address)
+     const managerofContractLogic = await proponLogicContract.getOwner()
+    expect(managerofContractLogic).to.equal(addr1.address)
+  });  
 });
 
   describe("********************** Company1.js ********************** \nCompany Creation", function () {

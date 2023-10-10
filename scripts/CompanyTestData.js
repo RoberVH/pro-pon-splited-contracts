@@ -13,7 +13,7 @@ const Companies = [
       "companyId": "00878-26672-033",
       "description": "Lammerick Inc.",
       "contactName": "Marguerite Lefleur",
-      "email": "marguerite.lefleur@lammerick.ca", // rvicuna@hotmail.com
+      "email": "marguerite.lefleur@lammerick.ca", // roberto.vicuna@gmail.com
       "website": "www.lammerick.ca",
       "country": "CAN"
     },
@@ -58,7 +58,7 @@ const Companies = [
       "companyId": "0760-59213-8039",
       "description": "Lommax Realtor House Inc",
       "contactName": "Bernard Jonhson",
-      "email": "direct_sales@lommax.com",   // roberto.vicuna@gmail.com
+      "email": "direct_sales@lommax.com",   // rvicunah@yahoo.com
       "website": "www.digitalmarketing.ca",
       "country": "CAN"
     },
@@ -120,15 +120,15 @@ const Companies = [
       "country": "MEX"
       },         
 
-      { "accountName": "chrome-1",
-      "accountNumber": "0x15635D4bE6c1b666591b387a40227398dE16CAad",
-      "description": "21.509.400/0001-41",
-      "companyName": "Agrale do Sul S.A.",
-      "contactPerson": "Margarida Gomes",
-      "email": "mgomez@agraledosul.br",
-      "website": "www.agraledosul.br",
-      "country": "BRA"
-      },         
+        { "accountName": "chrome-1",
+        "accountNumber": "0x15635D4bE6c1b666591b387a40227398dE16CAad",
+        "description": "21.509.400/0001-41",
+        "companyName": "Agrale do Sul S.A.",
+        "contactPerson": "Margarida Gomes",
+        "email": "mgomez@agraledosul.br", // rvicuna@hotmail.com
+        "website": "www.agraledosul.br",
+        "country": "BRA"
+        },         
       
       { "accountName": "Coinbase-1", // en win azure chrome
       "accountNumber": "0x9BE1c0822bd376d1DA8c0289a7f98bC998d8099C",

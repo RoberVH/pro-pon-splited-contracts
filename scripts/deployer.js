@@ -30,6 +30,10 @@ const main = async () => {
     console.log("Propon_Data Owner:", owner)
     console.log("Propon_Data Manager:", manager)
     console.log("----------------------------------------------------");
+
+    const ownerLogic = await proPonLogicContract.getOwner()
+    console.log("Propon_Logic Owner:", ownerLogic)
+    console.log("----------------------------------------------------");
 };
 
 

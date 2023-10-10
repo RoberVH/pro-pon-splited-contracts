@@ -72,8 +72,8 @@
       ]
     },
     "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponData.sol": {
-      "lastModificationDate": 1696292491432,
-      "contentHash": "c7824f8b1d8467adfd37380c43fe39e2",
+      "lastModificationDate": 1696958479529,
+      "contentHash": "843ccca932289a40494ad99ba24b9baf",
       "sourceName": "contracts/proponData.sol",
       "solcConfig": {
         "version": "0.8.9",
@@ -144,8 +144,8 @@
       ]
     },
     "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponLogic.sol": {
-      "lastModificationDate": 1696620297274,
-      "contentHash": "8c4572bcc6d95ea05a3bd48c05892376",
+      "lastModificationDate": 1696897249196,
+      "contentHash": "92331fe8a7cb45522d8d4e4afe48bd4a",
       "sourceName": "contracts/proponLogic.sol",
       "solcConfig": {
         "version": "0.8.9",
