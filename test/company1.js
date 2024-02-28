@@ -112,7 +112,7 @@ describe('********************** Company1.js ********************** \nCompany Cr
       await loadFixture(deployPropon)
     // transfer Management from owner to addr2 address. Notice this doesn't make sense as addr in not a proponlogic contract but it's enough to proof correct transfering
     // this will come to play in case Logic changes, the Data contract will remain with a new manager Logic Contract
-    await proponLogicContract.transferDataContractOwnership(addr2.address) //addr2.address 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+    await proponDataContract.setOwner(addr2.address)  // authorized Manager account (owner account from hardhat) changes Logic Contract Owner
     const newManagerofDataContract = await proponDataContract.getOwner() //owner.address 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
     expect(newManagerofDataContract).to.equal(addr2.address)
   })
@@ -122,7 +122,8 @@ describe('********************** Company1.js ********************** \nCompany Cr
       await loadFixture(deployPropon)
     // transfer Management from owner to addr2 address. Notice this doesn't make sense as addr in not a proponlogic contract but it's enough to proof correct transfering
     // this will come to play in case Logic changes, the Data contract will remain with a new manager Logic Contract
-    await proponLogicContract.transferDataContractOwnership(addr2.address) //addr2.address 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+    //await proponLogicContract.transferDataContractOwnership(addr2.address) //addr2.address 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
+    await proponDataContract.setOwner(addr2.address)  // authorized Manager account (owner account from hardhat) changes Logic Contract Owner
     await expect(
       proponLogicContract.createCompany(
         test_pro_pon2.id,
@@ -147,7 +148,7 @@ describe('********************** Company1.js ********************** \nCompany Cr
     const proponLogicContract2 = await proponLogic2.deploy(
       proponDataContract.address
     )
-
+   // first company created when Data contract owner is still authorized Manager account (owner account from hardhat) 
     await proponLogicContract.connect(addr1).createCompany(
       test_pro_pon1.id,
       'Company create under proponLogic instance',
@@ -155,20 +156,18 @@ describe('********************** Company1.js ********************** \nCompany Cr
       { value: ethers.utils.parseEther('0.0001') }
     )
     // transfer Management from owner to second instance of Logic Contract
-    await proponLogicContract.transferDataContractOwnership(
-      proponLogicContract2.address
-    )
+    await proponDataContract.setOwner(proponLogicContract2.address)  // authorized Manager account (owner account from hardhat) changes Logic Contract Owner
     const newManagerofDataContract = await proponDataContract.getOwner()
     expect(newManagerofDataContract).to.be.equal(proponLogicContract2.address)
+    // second campoany create when owner is now proponLogicContract2
     await proponLogicContract2.connect(addr2).createCompany(
       test_pro_pon2.id,
-      'Company create under new proponLogic instance',
+      'Company create under new proponLogic2 instance',
       test_pro_pon2.country, // other country
       { value: ethers.utils.parseEther('0.0001') }
     )
-    await proponLogicContract2.transferDataContractOwnership(
-      proponLogicContract.address
-    )
+    await proponDataContract.setOwner(proponLogicContract.address)  // authorized Manager account (owner account from hardhat) changes back  Logic Contract Owner
+    // third company created again through original propon Logic contract
     await proponLogicContract.createCompany(
       test_pro_pon3.id,
       'Third Company create under original proponLogic instance again',

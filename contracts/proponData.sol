@@ -21,10 +21,12 @@ import "./proponShared.sol";
 
 // Pro-pon Data contract. Keeps track of companies and RFP contests
 contract pro_ponData is proponShared {
-    //Owner authorized to make changes to data (must be Propon Logic contract address)
+     // Owner authorized to make changes to data (must be Propon Logic contract address)
+     // only owner can do Company & Documents & RFP data changing tasks: Setting Companies, RFPs and Documents
     address private owner;
 
     // Manager authorized to set constants values and detroy contract
+    // only owner can do administrative tasks: Setting Prices, setting owner and destroy contract
     address private manager;
 
     // A company must pay to get recorder into system
@@ -64,14 +66,14 @@ contract pro_ponData is proponShared {
     mapping(bytes32 => bool) RfpIds;
 
     // Modifiers ***************************************************************
-    // only owner can do Company & Documents & RFP data changing tasks: Setting Companies, RFPs and Documents
+   
     // this Owner is always set to the current proponLogic contract, that will control writing data to Data Contract
     modifier onlyOwner() {
         require(msg.sender == owner, "only_owner_allowed");
         _;
     }
 
-// only owner can do administrative tasks: Setting Prices, setting owner and destroy contract
+
 // is set to the external account that controls the contract
     modifier onlyManager() {
         require(msg.sender == manager, "only_manager_allowed");
@@ -87,7 +89,8 @@ contract pro_ponData is proponShared {
 
     //**********************Setters ***************************************** */
 
-    function setOwner(address _newOwner) external onlyOwner {
+    // External Owner Account is only authorized to change the proponLogic contract hat handles Propon Data
+    function setOwner(address _newOwner) external onlyManager {
         owner = _newOwner;
     }
 

@@ -78,10 +78,6 @@ contract pro_ponLogic is proponShared {
     function getOwner() external view  returns (address) {
         return owner;
     }
-    function transferDataContractOwnership(address _newAddress) external onlyOwner {
-        dataContract.setOwner(_newAddress);
-    }
-
 
     // utility functions ***************************************************************
     function equals(

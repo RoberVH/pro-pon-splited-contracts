@@ -10,6 +10,7 @@ const main = async () => {
     const proPonDataContract = await ProPonDataFactory.deploy();
     await proPonDataContract.deployed();
     console.log("ProPon_Data deployed to:", proPonDataContract.address);
+    console.log("ProPon_Data Owner and Manager set to deploying account:", deployer.address);
     console.log("----------------------------------------------------");
 
      // 2. Deploy ProPonLogic contract
@@ -17,6 +18,7 @@ const main = async () => {
     const proPonLogicContract = await ProPonLogicFactory.deploy(proPonDataContract.address);
     await proPonLogicContract.deployed();
     console.log("ProPon_Logic deployed to:", proPonLogicContract.address);
+    console.log("ProPon_Logic Owner set to deploying account:", deployer.address);
     console.log("----------------------------------------------------");
 
 
