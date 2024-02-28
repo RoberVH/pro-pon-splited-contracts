@@ -1,222 +1,7 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/smartcontract-propon/contracts/pro-pon.sol": {
-      "lastModificationDate": 1683405413444,
-      "contentHash": "cd8d4b17433b4173967e520a1bfa66d1",
-      "sourceName": "contracts/pro-pon.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.9"
-      ],
-      "artifacts": [
-        "pro_pon"
-      ]
-    },
-    "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/smartcontract-propon/node_modules/hardhat/console.sol": {
-      "lastModificationDate": 1658365908318,
-      "contentHash": "cc4777addd464ea56fa35b1c45df0591",
-      "sourceName": "hardhat/console.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        ">=0.4.22 <0.9.0"
-      ],
-      "artifacts": [
-        "console"
-      ]
-    },
-    "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponData.sol": {
-      "lastModificationDate": 1696958479529,
-      "contentHash": "843ccca932289a40494ad99ba24b9baf",
-      "sourceName": "contracts/proponData.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./proponShared.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.9"
-      ],
-      "artifacts": [
-        "pro_ponData"
-      ]
-    },
-    "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponShared.sol": {
-      "lastModificationDate": 1696444393271,
-      "contentHash": "afba1c9690f2a6a43f2384fe0604f658",
-      "sourceName": "contracts/proponShared.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.9"
-      ],
-      "artifacts": [
-        "proponShared"
-      ]
-    },
-    "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponLogic.sol": {
-      "lastModificationDate": 1696897249196,
-      "contentHash": "92331fe8a7cb45522d8d4e4afe48bd4a",
-      "sourceName": "contracts/proponLogic.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./proponData.sol",
-        "./proponShared.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.9"
-      ],
-      "artifacts": [
-        "pro_ponLogic"
-      ]
-    },
-    "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/node_modules/hardhat/console.sol": {
-      "lastModificationDate": 1684887462610,
-      "contentHash": "4ff3cd2f6272c9a6516e9ee4f2b967d3",
-      "sourceName": "hardhat/console.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        ">= 0.4.22 <0.9.0"
-      ],
-      "artifacts": [
-        "console"
-      ]
-    },
-    "/home/roberto/Documents/01 Pyctos/01 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/clockTest.sol": {
+    "/home/roberto/Documents/01 Pyctos/00 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/clockTest.sol": {
       "lastModificationDate": 1685383356712,
       "contentHash": "59b04b8c6875eb69461ab69a2b3c5c88",
       "sourceName": "contracts/clockTest.sol",
@@ -251,6 +36,151 @@
       ],
       "artifacts": [
         "clockTest"
+      ]
+    },
+    "/home/roberto/Documents/01 Pyctos/00 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/node_modules/hardhat/console.sol": {
+      "lastModificationDate": 1684887462610,
+      "contentHash": "4ff3cd2f6272c9a6516e9ee4f2b967d3",
+      "sourceName": "hardhat/console.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">= 0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "console"
+      ]
+    },
+    "/home/roberto/Documents/01 Pyctos/00 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponData.sol": {
+      "lastModificationDate": 1709078802531,
+      "contentHash": "ed5fe0b9eaee89655f54dd12808c1d9e",
+      "sourceName": "contracts/proponData.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./proponShared.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.9"
+      ],
+      "artifacts": [
+        "pro_ponData"
+      ]
+    },
+    "/home/roberto/Documents/01 Pyctos/00 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponShared.sol": {
+      "lastModificationDate": 1698796128081,
+      "contentHash": "afba1c9690f2a6a43f2384fe0604f658",
+      "sourceName": "contracts/proponShared.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.9"
+      ],
+      "artifacts": [
+        "proponShared"
+      ]
+    },
+    "/home/roberto/Documents/01 Pyctos/00 Profesionales/Buildspace-N&W-Junio-2022/split-contracts-propon/contracts/proponLogic.sol": {
+      "lastModificationDate": 1709079934933,
+      "contentHash": "fb348dedde67fca4cffbdf43f314de67",
+      "sourceName": "contracts/proponLogic.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./proponData.sol",
+        "./proponShared.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.9"
+      ],
+      "artifacts": [
+        "pro_ponLogic"
       ]
     }
   }

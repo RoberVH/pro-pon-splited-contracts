@@ -21,7 +21,7 @@ import "./proponShared.sol";
 
 // Pro-pon Data contract. Keeps track of companies and RFP contests
 contract pro_ponData is proponShared {
-    //Owner authorized to make changes to data
+    //Owner authorized to make changes to data (must be Propon Logic contract address)
     address private owner;
 
     // Manager authorized to set constants values and detroy contract
@@ -64,8 +64,8 @@ contract pro_ponData is proponShared {
     mapping(bytes32 => bool) RfpIds;
 
     // Modifiers ***************************************************************
-    // only owner can do data related tasks: Setting Companies, RFPs and Documents
-    // is set to proponLogic contract that controls writing data
+    // only owner can do Company & Documents & RFP data changing tasks: Setting Companies, RFPs and Documents
+    // this Owner is always set to the current proponLogic contract, that will control writing data to Data Contract
     modifier onlyOwner() {
         require(msg.sender == owner, "only_owner_allowed");
         _;
@@ -137,7 +137,7 @@ contract pro_ponData is proponShared {
         CompanyidTaken[_id] = true;
     }
 
-    // T he  pair parameter is a yixtaposition of company admin address and RFP id
+    // The  pair parameter is a juxtaposition of company admin address and RFP id
     //  and looks to prevent a company to use  the same RFP ID twice
     function setRfpId(bytes32 pair) external onlyOwner {
         RfpIds[pair] = true;
@@ -257,9 +257,9 @@ contract pro_ponData is proponShared {
     }
 
     // returns creation company price
-    function getCreateCompanyPrice() external view returns (uint256) {
-        return CREATE_COMPANY_PRICE;
-    }
+    // function getCreateCompanyPrice() external view returns (uint256) {
+    //     return CREATE_COMPANY_PRICE;
+    // }
 
     function isCompanyIdTaken(
         string calldata _id

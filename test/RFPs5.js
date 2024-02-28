@@ -3457,7 +3457,7 @@ describe("Validate contract is destroyed ***************************************
     const ownerData  = await  proponDataContract.getManager()
     let DataContractfunds = await ethers.provider.getBalance(proponDataContract.address)
     let RFP1 = await proponDataContract.getRFPbyIndex(1)
-    const presentCode = await ethers.provider.getCode(proponDataContract.address)
+    //const presentCode = await ethers.provider.getCode(proponDataContract.address)
     const tx = await proponDataContract.destroy()   // any funds to owner address
     const receipt = await tx.wait()
     DataContractfunds = await ethers.provider.getBalance(proponDataContract.address)

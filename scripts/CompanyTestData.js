@@ -22,7 +22,7 @@ const Companies = [
       "companyId": "SEA170427W0Z",
       "description": "Servicios de Automatizacion Electrica, S.A.",
       "contactName": "Serapio Maldonado",
-      "email": "ventas@servautoelectrica.com.mx",
+      "email": "ventas@servautoelectrica.com.mx", 
       "website": "www.servautoelectrica.com.mx",
       "country": "MEX"
     },

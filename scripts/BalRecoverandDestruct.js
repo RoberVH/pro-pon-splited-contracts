@@ -1,18 +1,19 @@
 // Scripts to recover matics from contracts and destroy contracts   at mumbai
 const { ethers } = require("hardhat");
+// 24 enero 2024, operacion sospechosade fallo hash de TX : 0xfe45a8df09d02d7418b3dd115a79baec9fcd09460a9c9e5508454e21b896cca6 del RFP LPN/000/074
 
 // proponData
-const CONTRACT_ADDRESS_DATA='0x03d628939c4fAE2f7299f6d4635A9791d9E58c31'
+const CONTRACT_ADDRESS_DATA='0x9fcC5eb02f9bd3b027539E768B1802CCE8C54BC6'
  // ProponData Contract owner: 0xE9B1436262593fA862911eDD0C78017B77D131ab
  
  //const address = '0x2F9A4aDCc776019cd3A510E79827c118e420d74c'    // deployed on may  6, 2023 
  //const CONTRACT_ADDRESS_LOGIC='0xB7d0d95809C38F5456fC308A19973DfC630A7FF2'
- const CONTRACT_ADDRESS_LOGIC="0x9c094DeA795b9Bf045354c59E02c1F57C09FF6C7"
+ const CONTRACT_ADDRESS_LOGIC="0x6F84CF022401023908Bff2f271C3b0403Cd95807"
 
 const  jsoncontractLogic = require('../artifacts/contracts/proponLogic.sol/pro_ponLogic.json')   
 const  jsoncontractLogicData = require('../artifacts/contracts/proponData.sol/pro_ponData.json')   
 
-const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE)
+const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_POLYGON_CVE)
 const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
 const proponContractLogic = new ethers.Contract(CONTRACT_ADDRESS_LOGIC, jsoncontractLogic.abi , signer);
 const proponContractData = new ethers.Contract(CONTRACT_ADDRESS_DATA, jsoncontractLogicData.abi , signer);
@@ -27,6 +28,14 @@ const proponContractData = new ethers.Contract(CONTRACT_ADDRESS_DATA, jsoncontra
   } catch (error) { 
     console.log('Error consultando balances: ', error)
   }
+}
+
+async function printCode(contractAddress) {
+// print contract code
+  const code= await ethers.provider.getCode(contractAddress)
+  console.log('Codigo:\n', code)
+  console.log('---------------------------------------------------------------------------------------------------\n')
+  
 }
 
   async function destroyContract() {
@@ -106,33 +115,62 @@ async  function recuperaSaldo() {
 
 }
 
-
-
-  const runMain = async () => {
+async  function destruyeLogic() {
     try {
       // console.log('Por cambiar dueño de Logic a',process.env.POLYGON_MUMBAI_ACCOUNT )
       // const tx1 = await proponContractLogic.setOwner(process.env.POLYGON_MUMBAI_ACCOUNT)
       // const receipt= await tx1.wait()
      //  console.log('cambio efectuado, recibo:', receipt)
-     await showBal()
-      const owner1 = await proponContractLogic.getOwner()
-      console.log('owner propon Logic', owner1)
-
-      // const owner= await proponContractLogic.getOwner()
-      // console.log('owner', owner)
-
-
-      // await showBal()
-      // await recuperaSaldo()
-     //  await showBal()
-       
-     // console.log('detruir contrato')
-     // await destroyContract()
+      //await showBal()
+      //const owner1 = await proponContractLogic.getOwner()
+      //console.log('owner propon Logic', owner1)
+      console.log('codigo de proponContractLogic')
+      //await printCode(proponContractData.address)
+      await printCode(proponContractLogic.address)
+      console.log('address Logic antes  destruccion', proponContractLogic.address) 
+     console.log('detruir contrato Logic')
+     //await destroyContract()
+     //await proponContractData.destroy()
+      console.log('Leer de nuevo codigo de Contrato Logic')
+      const proponContractLogicBis = new ethers.Contract(CONTRACT_ADDRESS_LOGIC, jsoncontractLogic.abi , signer);
+      console.log('address Logic despues destruido', proponContractLogicBis.address)
+      await printCode(proponContractLogicBis.address)
       process.exit(0);
     } catch (error) {
       console.log(error);
       process.exit(1);
     }
+}
+async function destruyeData() {
+  try {
+    // console.log('Por cambiar dueño de Logic a',process.env.POLYGON_MUMBAI_ACCOUNT )
+    // const tx1 = await proponContractLogic.setOwner(process.env.POLYGON_MUMBAI_ACCOUNT)
+    // const receipt= await tx1.wait()
+   //  console.log('cambio efectuado, recibo:', receipt)
+    //await showBal()
+    //const owner1 = await proponContractLogic.getOwner()
+    //console.log('owner propon Logic', owner1)
+    console.log('codigo de proponContractData')
+    await printCode(proponContractData.address)
+    //await printCode(proponContractLogic.address)
+    //console.log('address Logic antes  destruccion', proponContractLogic.address) 
+   console.log('detruir contrato data')
+   //await destroyContract()
+    await proponContractData.destroy()
+    console.log('Leer de nuevo codigo de Contrato Data')
+    const proponContractDataBis = new ethers.Contract(CONTRACT_ADDRESS_DATA, jsoncontractLogic.abi , signer);
+    console.log('address Data despues destruido', proponContractDataBis.address)
+    await printCode(proponContractDataBis.address)
+    process.exit(0);
+  } catch (error) {
+    console.log(error);
+    process.exit(1);
+  }
+}
+
+
+  const runMain = async () => {
+    await destruyeData()
   };
 
   runMain();

@@ -2,10 +2,15 @@ const { ethers } = require("hardhat");
 
 const main = async () => {
    // proponData
-  const CONTRACT_ADDRESS_DATA='0xDe57fcD6642058A651C965dD6522A9505349c095'
-  // ProponData Contract owner: 0xE9B1436262593fA862911eDD0C78017B77D131ab
+   // ProponData Contract owner: 0xE9B1436262593fA862911eDD0C78017B77D131ab
+  
+   // const  CONTRACT_ADDRESS_DATA='0xDe57fcD6642058A651C965dD6522A9505349c095'
+  //  const CONTRACT_ADDRESS_LOGIC='
+  
+  const  CONTRACT_ADDRESS_DATA=   process.env.PROPON_DATA_ADDRESS
+    const CONTRACT_ADDRESS_LOGIC= process.env.PROPON_LOGIC_ADDRESS
 
-  const CONTRACT_ADDRESS_LOGIC='0x8E5ca9455f034Be111688096f9464E7d8485b6a4'
+
 
   const  jsoncontractLogic = require('../artifacts/contracts/proponLogic.sol/pro_ponLogic.json')   
   const  jsoncontractData = require('../artifacts/contracts/proponData.sol/pro_ponData.json')   
