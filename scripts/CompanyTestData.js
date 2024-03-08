@@ -1,143 +1,158 @@
-const Companies = [  
-    {  "accountName": "test-3",
-      "accountNumber": "0x6287fDD14C0F6bc4c6De77D025742687287Fba7d",
-      "companyId": "0045-29983-0317",
-      "description": "Grand Höttreil du Mond Inc",
-      "contactName": "Dorothea Vendreaux",
-      "email": "ventes@granhottreil.ca",
-      "website": "www.granhottreil.ca",
-      "country": "CAN"
-    },
-    { "accountName": "Account 1",
-      "accountNumber": "0xd4855bE53404C9Bc327f17BFA9756D94D423D8D0",
-      "companyId": "00878-26672-033",
-      "description": "Lammerick Inc.",
-      "contactName": "Marguerite Lefleur",
-      "email": "marguerite.lefleur@lammerick.ca", // roberto.vicuna@gmail.com
-      "website": "www.lammerick.ca",
-      "country": "CAN"
-    },
-    { "accountName": "Test -1",
-      "accountNumber": "0xE9B1436262593fA862911eDD0C78017B77D131ab",
-      "companyId": "SEA170427W0Z",
-      "description": "Servicios de Automatizacion Electrica, S.A.",
-      "contactName": "Serapio Maldonado",
-      "email": "ventas@servautoelectrica.com.mx", 
-      "website": "www.servautoelectrica.com.mx",
-      "country": "MEX"
-    },
-    { "accountName": "Cta para desarrollo",
-      "accountNumber": "0x6F02b922b06C32e1704dD1826776B290AC45D89F",
-      "companyId": "0881-275560-301",
-      "description": "Gold Systems, LLC",
-      "contactName": "Loreta Shaffer Craigton Shapiro",
-      "email": "sales@goldsys.com",
-      "website": "www.goldsys.com",
-      "country": "USA"
-    },
-    { "accountName": "test-2",
-      "accountNumber": "0x6d96b8d1A4A9991a3831935BAb3413254cB02d87",
-      "companyId": "091-0374-27",
-      "description": "Grass Cooper Mining Co. Inc.",
-      "contactName": "Silvya Chananguptran",
-      "email": "direct.sales@grasscorporation.com",
-      "website": "www.grasscorporation.com",
-      "country": "USA"
-    },
-    { "accountName": "Account-5",
-      "accountNumber": "0xfD0a294D136E0395322135AB3898A8bdEC6D3c40",
-      "companyId": "0781-99034-034",
-      "description": "Digital Marketing 21rst Century, LLC",
-      "contactName": "Graham Berenstein",
-      "email": "graham_berenstein@digitalmarketing.ca",
-      "website": "www.digitalmarketing.ca",
-      "country": "CAN"
-    },
-    { "accountName": "Account 6",
-      "accountNumber": "0x6b85215bdDc1B2DFE64f2E0EE09221E2cE29CFB2",
-      "companyId": "0760-59213-8039",
-      "description": "Lommax Realtor House Inc",
-      "contactName": "Bernard Jonhson",
-      "email": "direct_sales@lommax.com",   // rvicunah@yahoo.com
-      "website": "www.digitalmarketing.ca",
-      "country": "CAN"
-    },
-    { "accountName": "Cta para revisar Websites",
-      "accountNumber": "0xabd0E7060a6D438C6D5e54DF5Bb4365C74b1eC36",
-      "description": "SUM072110V91",
-      "companyName": "Surtidora de Materiales del Sureste SA de CV",
-      "contactPerson": "Renata Madariaga",
-      "email": "renatamadariaga@sumatsur.com.mx", //rvicunah@yahoo.com
-      "website": "www.sumatsur.com.mx",
-      "country": "MEX"
-      },
-      { "accountName": "Test-7",
-      "accountNumber": "0x883F4B1a36Ccc16E59aEa4592A6Cd2AEE5c02742",
-      "description": "9001349582",
-      "companyName": "PALQUI LABORATORIOS S.A.S",
-      "contactPerson": "Valeria Aristizabal",
-      "email": "palquilabs_ventas@palquilabs.com",
-      "website": "www.palquilabs.com",
-      "country": "COL"
-      },      
-      { "accountName": "rovicher.eth",
-      "accountNumber": "0xA17C0CA84D742Df1879Ca096835c6433406759e2",
-      "description": "12.345.678/0001-90",
-      "companyName": "Thidemar Serviços de Construção Civil Ltda",
-      "contactPerson": "Heitor Zeishudo",
-      "email": "vendas@thidemar.com.br",
-      "website": "http://www.thidemar.com.br",
-      "country": "BRA"
-      },   
-      
-      { "accountName": "Propon.me-Admin",
-      "accountNumber": "0x8cb7D66b79dc501CF8879b290B77361E24aC7177",
-      "description": "DEA160412UV0",
-      "companyName": "Desarrollo Arquitectonico Muriel & Asociados, S.A. de C.V.",
-      "contactPerson": "Bernardo Jiménez",
-      "email": "proyectos@prodigy.com.mx",
-      "website": "",
-      "country": "MEX"
-      },   
-      
-      { "accountName": "Propon-Admin",
-      "accountNumber": "0x4D4adEC22376cC3D2dB900314152f688a0b406E2",
-      "description": "41.708.273/0301-17",
-      "companyName": "Dasein Alumínios",
-      "contactPerson": "Luciana Morais-Campinha",
-      "email": "luciana-morais@daseinaluminios.com.br",
-      "website": "www.daseinaluminios.com.br",
-      "country": "BRA"
-      },   
+const Companies = [
+  {
+    accountName: 'test-3',
+    accountNumber: '0x6287fDD14C0F6bc4c6De77D025742687287Fba7d', //initial polygon balance: 1 Matic
+    companyId: '0045-29983-0317',
+    description: 'Grand Höttreil du Mond Inc',
+    contactName: 'Dorothea Vendreaux',
+    email: 'ventes@granhottreil.ca', // rvicuna@hotmail.com
+    website: 'www.granhottreil.ca',
+    country: 'CAN'
+  },
+  {
+    accountName: 'Account 1',
+    accountNumber: '0xd4855bE53404C9Bc327f17BFA9756D94D423D8D0', // initial polygon balance: 1 Matic
+    companyId: '00878-26672-033',
+    description: 'Lammerick Inc.',
+    contactName: 'Marguerite Lefleur',
+    email: 'marguerite.lefleur@lammerick.ca', // roberto.vicuna@gmail.com
+    website: 'www.lammerick.ca',
+    country: 'CAN'
+  },
+  {
+    accountName: 'Test -1',
+    accountNumber: '0xE9B1436262593fA862911eDD0C78017B77D131ab',  // initial polygon balance: 5.08 Matic
+    companyId: 'SEA170427W0Z',
+    description: 'Servicios de Automatizacion Electrica, S.A.',
+    contactName: 'Serapio Maldonado',
+    email: 'ventas@servautoelectrica.com.mx', // rvicunah@yahoo.com
+    website: 'www.servautoelectrica.com.mx',
+    country: 'MEX'
+  },
+  {
+    accountName: 'Cta para desarrollo',
+    accountNumber: '0x6F02b922b06C32e1704dD1826776B290AC45D89F',
+    companyId: '0881-275560-301',
+    description: 'Gold Systems, LLC',
+    contactName: 'Loreta Shaffer Craigton Shapiro',
+    email: 'sales@goldsys.com',
+    website: 'www.goldsys.com',
+    country: 'USA'
+  },
+  {
+    accountName: 'test-2',
+    accountNumber: '0x6d96b8d1A4A9991a3831935BAb3413254cB02d87', //initial polygon balance: 1 Matic
+    companyId: '091-0374-27',
+    description: 'Grass Cooper Mining Co. Inc.',
+    contactName: 'Silvya Chananguptran',
+    email: 'direct.sales@grasscorporation.com', //  roberto.vicuna@gmail.com
+    website: 'www.grasscorporation.com',
+    country: 'USA'
+  },
+  {
+    accountName: 'Account-5',
+    accountNumber: '0xfD0a294D136E0395322135AB3898A8bdEC6D3c40', //initial polygon balance: 1 Matic
+    companyId: '0781-99034-034',
+    description: 'Digital Marketing 21rst Century, LLC',
+    contactName: 'Graham Berenstein',
+    email: 'graham_berenstein@digitalmarketing.ca', // Sin Email
+    website: 'www.digitalmarketing.ca',
+    country: 'CAN'
+  },
+  {
+    accountName: 'Account 6',
+    accountNumber: '0x6b85215bdDc1B2DFE64f2E0EE09221E2cE29CFB2',
+    companyId: '0760-59213-8039',
+    description: 'Lommax Realtor House Inc',
+    contactName: 'Bernard Jonhson',
+    email: 'direct_sales@lommax.com', // rvicunah@yahoo.com
+    website: 'www.digitalmarketing.ca',
+    country: 'CAN'
+  },
+  {
+    accountName: 'Cta para revisar Websites',
+    accountNumber: '0xabd0E7060a6D438C6D5e54DF5Bb4365C74b1eC36',
+    description: 'SUM072110V91',
+    companyName: 'Surtidora de Materiales del Sureste SA de CV',
+    contactPerson: 'Renata Madariaga',
+    email: 'renatamadariaga@sumatsur.com.mx', //rvicunah@yahoo.com
+    website: 'www.sumatsur.com.mx',
+    country: 'MEX'
+  },
+  {
+    accountName: 'Test-7',
+    accountNumber: '0x883F4B1a36Ccc16E59aEa4592A6Cd2AEE5c02742',
+    description: '9001349582',
+    companyName: 'PALQUI LABORATORIOS S.A.S.',
+    contactPerson: 'Valeria Aristizabal',
+    email: 'palquilabs_ventas@palquilabs.com', // rvicuna@hotmail.com
+    website: 'www.palquilabs.com',
+    country: 'COL'
+  },
+  {
+    accountName: 'rovicher.eth',
+    accountNumber: '0xA17C0CA84D742Df1879Ca096835c6433406759e2',
+    description: '12.345.678/0001-90',
+    companyName: 'Thidemar Serviços de Construção Civil Ltda',
+    contactPerson: 'Heitor Zeishudo',
+    email: 'vendas@thidemar.com.br',
+    website: 'http://www.thidemar.com.br',
+    country: 'BRA'
+  },
 
-      { "accountName": "Propon/Admin",
-      "accountNumber": "0x85a8B8404063B60119F42a4113Bec56C27505C48",
-      "description": "COS190312M12",
-      "companyName": "Coordinadora de Servicios de Logística S.A.",
-      "contactPerson": "Rocío Castellanos",
-      "email": "buzon@coordinadoraserv.com.mx",
-      "website": "www.coordinadoraserv.com.mx",
-      "country": "MEX"
-      },         
+  {
+    accountName: 'Propon.me-Admin',
+    accountNumber: '0x8cb7D66b79dc501CF8879b290B77361E24aC7177',
+    description: 'DEA160412UV0',
+    companyName: 'Desarrollo Arquitectonico Muriel & Asociados, S.A. de C.V.',
+    contactPerson: 'Bernardo Jiménez',
+    email: 'proyectos@prodigy.com.mx',
+    website: '',
+    country: 'MEX'
+  },
 
-        { "accountName": "chrome-1",
-        "accountNumber": "0x15635D4bE6c1b666591b387a40227398dE16CAad",
-        "description": "21.509.400/0001-41",
-        "companyName": "Agrale do Sul S.A.",
-        "contactPerson": "Margarida Gomes",
-        "email": "mgomez@agraledosul.br", // rvicuna@hotmail.com
-        "website": "www.agraledosul.br",
-        "country": "BRA"
-        },         
-      
-      { "accountName": "Coinbase-1", // en win azure chrome
-      "accountNumber": "0x9BE1c0822bd376d1DA8c0289a7f98bC998d8099C",
-      "description": "193-470032-825",
-      "companyName": "Jeffrey Blacksmith.",
-      "contactPerson": "Jeffrey Blacksmith",
-      "email": "jeffrey1987@yahoo.com",
-      "website": "",
-      "country": "USA"
-      },         
-    ]
-    // Brazil Tax Code : 'Cadastro Nacional da Pessoa Jurídica'
+  {
+    accountName: 'Propon-Admin',
+    accountNumber: '0x4D4adEC22376cC3D2dB900314152f688a0b406E2',
+    description: '41.708.273/0301-17',
+    companyName: 'Dasein Alumínios',
+    contactPerson: 'Luciana Morais-Campinha',
+    email: 'luciana-morais@daseinaluminios.com.br',
+    website: 'www.daseinaluminios.com.br',
+    country: 'BRA'
+  },
+
+  {
+    accountName: 'Propon/Admin',
+    accountNumber: '0x85a8B8404063B60119F42a4113Bec56C27505C48',
+    description: 'COS190312M12',
+    companyName: 'Coordinadora de Servicios de Logística S.A.',
+    contactPerson: 'Rocío Castellanos',
+    email: 'buzon@coordinadoraserv.com.mx',
+    website: 'www.coordinadoraserv.com.mx',
+    country: 'MEX'
+  },
+
+  {
+    accountName: 'chrome-1',
+    accountNumber: '0x15635D4bE6c1b666591b387a40227398dE16CAad',
+    description: '21.509.400/0001-41',
+    companyName: 'Agrale do Sul S.A.',
+    contactPerson: 'Margarida Gomes',
+    email: 'mgomez@agraledosul.br', // rvicuna@hotmail.com
+    website: 'www.agraledosul.br',
+    country: 'BRA'
+  },
+
+  {
+    accountName: 'Coinbase-1', // en win azure chrome
+    accountNumber: '0x9BE1c0822bd376d1DA8c0289a7f98bC998d8099C',
+    description: '193-470032-825',
+    companyName: 'Jeffrey Blacksmith.',
+    contactPerson: 'Jeffrey Blacksmith',
+    email: 'jeffrey1987@yahoo.com',
+    website: '',
+    country: 'USA'
+  }
+]
+// Brazil Tax Code : 'Cadastro Nacional da Pessoa Jurídica'

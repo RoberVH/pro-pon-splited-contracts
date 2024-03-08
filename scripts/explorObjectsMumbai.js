@@ -1,13 +1,13 @@
 // bench testwork to explore and test contract objects at mumbai
-const { ethers } = require("hardhat")
-const proponContractDataAddress = process.env.PROPON_DATA_ADDRESS
-const jsonContractData = require("../artifacts/contracts/proponData.sol/pro_ponData.json")
+const { ethers } = require('hardhat')
+const proponContractDataAddress = process.env.PROPON_DATA_ADDRESS_TEST
+const jsonContractData = require('../artifacts/contracts/proponData.sol/pro_ponData.json')
 
 const ContestType = { OPEN: 0, INVITATION_ONLY: 1 }
 const openContest = ContestType.OPEN
 const invitationContest = ContestType.INVITATION_ONLY
 
-const network = "maticmum"
+const network = 'maticmum'
 const APIKEY = process.env.ALCHEMY_MUMBAI_APIKEY
 
 const alchemyprovider = new ethers.providers.AlchemyProvider(network, APIKEY)
@@ -18,7 +18,7 @@ const signer = new ethers.Wallet(
 )
 
 const proponContract = new ethers.Contract(
-  process.env.PROPON_DATA_ADDRESS,
+  process.env.PROPON_DATA_ADDRESS_TEST,
   jsonContractData.abi,
   signer
 )
@@ -26,12 +26,12 @@ const proponContract = new ethers.Contract(
 const main = async () => {
   try {
     const owner = await proponContract.getOwner()
-    console.log("owner", owner)
+    console.log('owner', owner)
     const company = await proponContract.getCompanyId(
-      "0x6d96b8d1A4A9991a3831935BAb3413254cB02d87"
+      '0x6d96b8d1A4A9991a3831935BAb3413254cB02d87'
     )
     const currIdx = parseInt(await proponContract.getcurrentRFPIdx())
-    console.log("Numero de RFPs", currIdx)
+    console.log('Numero de RFPs', currIdx)
     await printRFPs(38, 42)
   } catch (error) {
     console.log(error.message)
@@ -42,14 +42,14 @@ const main = async () => {
 async function printRFPs(from, to) {
   for (let i = from; i < to; i++) {
     const RFP = await proponContract.getRFPbyIndex(i)
-    console.log(i, "RFP:")
+    console.log(i, 'RFP:')
     //console.log(RFP)
     if (!RFP.name) {
-      console.log("No existe")
+      console.log('No existe')
       continue
     }
     printObjectProperties(RFP)
-    console.log("-------------------------------------------------")
+    console.log('-------------------------------------------------')
     // const Doctos = await proponContract.getDocumentsfromRFP(i)
     // for (let j = 0; j < Doctos.length; j++) {
     //   console.log("Doctos:")
@@ -62,10 +62,10 @@ function printObjectProperties(obj) {
   for (const [key, value] of Object.entries(obj)) {
     const prop = parseInt(key)
     if (isNaN(prop)) {
-      if (value && value.type === "BigNumber") {
+      if (value && value.type === 'BigNumber') {
         console.log(`${key}: ${parseInt(value.hex)}`)
       } else {
-        if (key.includes("Date")) console.log(`${key}: ${convDate(value)}`)
+        if (key.includes('Date')) console.log(`${key}: ${convDate(value)}`)
         else console.log(`${key}: ${value}`)
       }
     }

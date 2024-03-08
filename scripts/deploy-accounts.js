@@ -1,9 +1,9 @@
 const { ethers } = require("hardhat");
 
 const main = async () => {
-  console.log('clave alchemy polygon link:',process.env.ALCHEMY_POLYGON_CVE)
+  console.log('clave alchemy polygon link:',process.env.ALCHEMY_MUMBAI_CVE)
     const [deployer] = await ethers.getSigners();
-    const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "matic" ,  process.env.ALCHEMY_POLYGON_CVE)
+    const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "matic" ,  process.env.ALCHEMY_MUMBAI_CVE)
     console.log("Deploying contracts with the account:", deployer.address);
     const balance = await alchemyprovider.getBalance(deployer.address);
     console.log(`The balance of address ${deployer.address} is ${ethers.utils.formatEther(balance)} MATICS`);
