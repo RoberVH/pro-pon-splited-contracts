@@ -2,10 +2,10 @@
  * deployer.js
  *  Deploy Propon contracts Data and Logic to mumbai or polygon
  * Deploying to Mumbai: 
- *  Change alchemy link to Mumbai/Polygon
+ *  Change alchemy link to Amoy/Polygon (changed Jan/2025)
  *  Verify balance on deploying account (test-1)
- *  Command to deploy to mumbai: npx hardhat run scripts/deployer.js --network mumbai
- *  Command to deploy to mumbai: npx hardhat run scripts/deployer.js --network polygon
+ *  Command to deploy to amoy: npx hardhat run scripts/deployer.js --network amoy
+ *  Command to deploy to Polygon: npx hardhat run scripts/deployer.js --network polygon
  */
 
 
