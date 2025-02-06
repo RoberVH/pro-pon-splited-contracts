@@ -7,7 +7,7 @@ const alchemyprovider = new ethers.providers.AlchemyProvider(
   process.env.ALCHEMY_MUMBAI_CVE
 )
 const signer = new ethers.Wallet(
-  process.env.POLYGON_MUMBAI_PVK_ACCOUNT,
+  process.env.TEST1_PVK_ACCOUNT,
   alchemyprovider
 )
 const proponContract = new ethers.Contract(

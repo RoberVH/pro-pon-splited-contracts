@@ -13,8 +13,8 @@ const CONTRACT_ADDRESS_DATA='0x9fcC5eb02f9bd3b027539E768B1802CCE8C54BC6'
 const  jsoncontractLogic = require('../artifacts/contracts/proponLogic.sol/pro_ponLogic.json')   
 const  jsoncontractLogicData = require('../artifacts/contracts/proponData.sol/pro_ponData.json')   
 
-const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_POLYGON_CVE)
-const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
+const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MAINNET_CVE)
+const signer = new ethers.Wallet(process.env.TEST1_PVK_ACCOUNT, alchemyprovider);
 const proponContractLogic = new ethers.Contract(CONTRACT_ADDRESS_LOGIC, jsoncontractLogic.abi , signer);
 const proponContractData = new ethers.Contract(CONTRACT_ADDRESS_DATA, jsoncontractLogicData.abi , signer);
 
@@ -117,8 +117,8 @@ async  function recuperaSaldo() {
 
 async  function destruyeLogic() {
     try {
-      // console.log('Por cambiar dueño de Logic a',process.env.POLYGON_MUMBAI_ACCOUNT )
-      // const tx1 = await proponContractLogic.setOwner(process.env.POLYGON_MUMBAI_ACCOUNT)
+      // console.log('Por cambiar dueño de Logic a',process.env.TEST1_PBK_ACCOUNT )
+      // const tx1 = await proponContractLogic.setOwner(process.env.TEST1_PBK_ACCOUNT)
       // const receipt= await tx1.wait()
      //  console.log('cambio efectuado, recibo:', receipt)
       //await showBal()
@@ -143,8 +143,8 @@ async  function destruyeLogic() {
 }
 async function destruyeData() {
   try {
-    // console.log('Por cambiar dueño de Logic a',process.env.POLYGON_MUMBAI_ACCOUNT )
-    // const tx1 = await proponContractLogic.setOwner(process.env.POLYGON_MUMBAI_ACCOUNT)
+    // console.log('Por cambiar dueño de Logic a',process.env.TEST1_PBK_ACCOUNT )
+    // const tx1 = await proponContractLogic.setOwner(process.env.TEST1_PBK_ACCOUNT)
     // const receipt= await tx1.wait()
    //  console.log('cambio efectuado, recibo:', receipt)
     //await showBal()

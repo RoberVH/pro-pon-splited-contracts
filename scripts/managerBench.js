@@ -6,7 +6,7 @@ const addressData='0x8703edb194E2584404ddd6231Ab5c3615F92211E'
 const addressLogic='0x191D8544BbC67863aCA5ca8145866dBB4Ab108dB'
 
 const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE)
-const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
+const signer = new ethers.Wallet(process.env.TEST1_PVK_ACCOUNT, alchemyprovider);
 const proponDataContract = new ethers.Contract(addressData, jsoncontractData.abi , signer);
 const proponLogicContract = new ethers.Contract(addressLogic, jsoncontractLogic.abi , signer);
 

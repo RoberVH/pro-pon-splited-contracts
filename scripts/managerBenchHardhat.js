@@ -6,7 +6,7 @@ async function main() {
   // Provider and Signer setup
   const provider = new ethers.providers.AlchemyProvider( network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE)
 
-  const privateKey = process.env.POLYGON_MUMBAI_PVK_ACCOUNT
+  const privateKey = process.env.TEST1_PVK_ACCOUNT
   const wallet = new ethers.Wallet(privateKey, provider);
 
   // Contract setup

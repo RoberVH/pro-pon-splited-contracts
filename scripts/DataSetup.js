@@ -4,7 +4,7 @@ const address='0x1bD78C554Da8765222502c2bFE248a2C5b15238d'
 const  jsoncontract = require('../artifacts/contracts/pro-pon.sol/pro_pon.json')   
 
 const alchemyprovider=new ethers.providers.AlchemyProvider(  network = "maticmum" ,  process.env.ALCHEMY_MUMBAI_CVE)
-const signer = new ethers.Wallet(process.env.POLYGON_MUMBAI_PVK_ACCOUNT, alchemyprovider);
+const signer = new ethers.Wallet(process.env.TEST1_PVK_ACCOUNT, alchemyprovider);
 const proponContract = new ethers.Contract(address, jsoncontract.abi , signer);
 
   async function getBalance(address) {

@@ -11,7 +11,7 @@ const main = async () => {
     process.env.ALCHEMY_MUMBAI_CVE
   );
   const signer = new ethers.Wallet(
-    process.env.POLYGON_MUMBAI_PVK_ACCOUNT,
+    process.env.TEST1_PVK_ACCOUNT,
     alchemyprovider
   );
   const pro_ponContract = new ethers.Contract(

@@ -8,12 +8,12 @@ const openContest = ContestType.OPEN
 const invitationContest = ContestType.INVITATION_ONLY
 
 const network = 'maticmum'
-const APIKEY = process.env.ALCHEMY_MUMBAI_APIKEY
+const APIKEY = process.env.ALCHEMY_DEV_APIKEY
 
 const alchemyprovider = new ethers.providers.AlchemyProvider(network, APIKEY)
 
 const signer = new ethers.Wallet(
-  process.env.POLYGON_MUMBAI_PVK_ACCOUNT,
+  process.env.TEST1_PVK_ACCOUNT,
   alchemyprovider
 )
 
